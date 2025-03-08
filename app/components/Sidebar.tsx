@@ -45,7 +45,7 @@ export default function Sidebar({ isFixed }: { isFixed: boolean }) {
       <aside
         className={`w-64 px-8 pb-8 pt-[70px] h-screen bg-secondary z-20 flex flex-col 
   transition-transform transform shadow-lg 
-  ${isFixed ? "fixed top-0 left-0" : "relative"} 
+  ${isFixed ? "fixed top-0 left-0" : "fixed top-0 left-0 xl:relative"} 
   ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
   xl:translate-x-0 xl:flex ${isFixed ? "xl:fixed" : "xl:relative"}`}
       >
@@ -83,12 +83,13 @@ export default function Sidebar({ isFixed }: { isFixed: boolean }) {
               <Link
                 key={href}
                 href={href}
+                onClick={() => setIsSidebarOpen(false)} // Close sidebar on click
                 className={`flex items-center gap-3 p-3 rounded-xl text-base font-medium transition border 
-                  ${
-                    isSelected
-                      ? "bg-primary/10 border-primary text-primary"
-                      : "border-transparent text-black/40 hover:bg-primary/10"
-                  }`}
+                ${
+                  isSelected
+                    ? "bg-primary/10 border-primary text-primary"
+                    : "border-transparent text-black/40 hover:bg-primary/10"
+                }`}
               >
                 <Icon
                   className={`w-6 h-6 ${
@@ -102,15 +103,20 @@ export default function Sidebar({ isFixed }: { isFixed: boolean }) {
 
           {/* Settings Button */}
           <button
-            onClick={() => setIsPopupOpen(true)}
+            onClick={() => {
+              setIsPopupOpen(true);
+              setIsSidebarOpen(false); // Close sidebar on mobile
+            }}
             className="flex items-center gap-3 p-3 rounded-xl text-base font-medium transition border border-transparent text-black/40 hover:bg-primary/10"
           >
             <Settings className="w-6 h-6 text-black/40" />
             Settings
           </button>
 
+          {/* Create Post Link */}
           <Link
             href="/create-post"
+            onClick={() => setIsSidebarOpen(false)} // Close sidebar on click
             className="flex items-center gap-3 p-3 rounded-xl text-base font-medium transition bg-primary text-white hover:bg-primary/90"
           >
             <PlusCircle className="w-6 h-6 text-white" />

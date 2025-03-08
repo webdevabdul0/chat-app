@@ -64,7 +64,11 @@ export default function ChatProvider({
         console.log("✅ Token received:", data.token);
 
         await chatClient.connectUser(
-          { id: user.uid, name: user.displayName || user.username || "User" },
+          {
+            id: user.uid,
+            name: user.displayName || user.username || "User",
+            username: user.username,
+          },
           data.token
         );
 
@@ -74,7 +78,6 @@ export default function ChatProvider({
           user: {
             id: user.uid,
             name: user.displayName || user.username,
-            image: user.image,
           },
           token: data.token,
         });
