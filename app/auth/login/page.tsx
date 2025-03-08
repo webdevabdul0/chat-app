@@ -73,12 +73,12 @@ export default function LoginPage() {
               )}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <Label htmlFor="email">Email / Phone Number</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
                     name="email"
-                    placeholder="Enter Email or Phone number"
+                    placeholder="Enter Email"
                     value={form.email}
                     onChange={handleChange}
                     required

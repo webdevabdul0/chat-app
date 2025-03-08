@@ -17,6 +17,7 @@ import CustomChannelHeader from "./components/CustomChannelHeader";
 const CustomChannelPreview = ({
   channel,
   setActiveChannel,
+  setSelectedChannel,
   selectedChannel,
 }) => {
   const { user: currentUser } = useAuth();
@@ -28,7 +29,6 @@ const CustomChannelPreview = ({
   const recipient = members.find(
     (member) => member.user.id !== currentUser?.uid
   );
-
   const recipientName = recipient?.user?.name || "Unknown User";
   const recipientAvatar = recipient?.user?.image;
   const lastMessage =
@@ -36,14 +36,16 @@ const CustomChannelPreview = ({
       ? channel.state.messages[channel.state.messages.length - 1].text
       : "No messages yet";
 
-  // Check if this channel is the selected one
   const isSelected = selectedChannel?.id === channel.id;
 
   return (
     <div
       className={`flex items-center justify-between p-3 m-2 rounded-lg cursor-pointer transition-all 
         ${isSelected ? "bg-primary/10" : "hover:bg-primary/5"}`}
-      onClick={() => setActiveChannel(channel)}
+      onClick={() => {
+        setActiveChannel(channel);
+        setSelectedChannel(channel); // <-- Ensure the selected channel is updated
+      }}
     >
       <div className="flex items-center gap-3">
         {recipientAvatar ? (
@@ -90,7 +92,6 @@ const MessagesPage = () => {
           <div className="flex items-center gap-2 text-black/80">
             <MessageSquareText className="text-black/80" /> Messages
           </div>
-          <Plus className="cursor-pointer text-purple-500" />
         </div>
 
         <ChannelList
@@ -99,42 +100,60 @@ const MessagesPage = () => {
             members: { $in: [chatClient.userID!] },
           }}
           options={{ presence: true, state: true }}
-          Preview={CustomChannelPreview}
+          Preview={(props) => (
+            <CustomChannelPreview
+              {...props}
+              setSelectedChannel={setSelectedChannel}
+              selectedChannel={selectedChannel}
+            />
+          )}
         />
       </div>
 
       {/* Chat Window */}
       <div className="w-full sm:w-2/3 md:w-3/5 flex flex-col bg-white border-r">
-        <Channel channel={selectedChannel}>
-          <Window>
-            <CustomChannelHeader />
-            <MessageList />
-            <MessageInput />
-          </Window>
-        </Channel>
+        {selectedChannel ? (
+          <Channel channel={selectedChannel}>
+            <Window>
+              <CustomChannelHeader />
+              <MessageList />
+              <MessageInput />
+            </Window>
+          </Channel>
+        ) : (
+          <div className="flex flex-col justify-center items-center h-full text-gray-500">
+            <MessageSquareText className="w-12 h-12 text-gray-400 mb-2" />
+            <p className="text-lg font-medium">Start a new conversation</p>
+          </div>
+        )}
       </div>
 
       {/* Right Sidebar - Member Info */}
-      <div className="hidden  md:w-1/5 bg-secondary md:flex flex-col p-4">
-        <h2 className="text-black/80  font-semibold text-xl mb-4">
+      <div className="hidden md:w-1/5 bg-secondary md:flex flex-col p-4">
+        <h2 className="text-black/80 font-semibold text-xl mb-4">
           Chat Members
         </h2>
-        {selectedChannel && (
-          <div className="flex items-center gap-3 p-3 bg-white rounded-lg shadow">
-            <img
-              src={
-                selectedChannel?.state?.members?.[chatClient.userID!]?.user
-                  ?.image || "default.png"
-              }
-              alt="user"
-              className="w-10 h-10 rounded-full"
-            />
-            <span className="font-medium text-purple-900">
-              {selectedChannel?.state?.members?.[chatClient.userID!]?.user
-                ?.name || "User"}
-            </span>
-          </div>
-        )}
+        {selectedChannel &&
+          selectedChannel.state &&
+          selectedChannel.state.members && (
+            <div className="flex flex-col gap-2">
+              {Object.values(selectedChannel.state.members).map((member) => (
+                <div
+                  key={member.user.id}
+                  className="flex items-center gap-3 p-3 "
+                >
+                  <img
+                    src={member.user.image || "default.png"}
+                    alt="user"
+                    className="w-10 h-10 rounded-full"
+                  />
+                  <span className="font-medium text-purple-900">
+                    {member.user.name || "User"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
       </div>
     </div>
   );

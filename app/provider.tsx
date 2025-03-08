@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, User, signOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -9,6 +9,7 @@ interface AuthContextType {
   user: User | null;
   userData: any | null;
   loading: boolean;
+  logout: () => Promise<void>; // Add logout function
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,8 +36,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
+  // Logout function
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+      setUserData(null); // Ensure state clears after logout
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, userData, loading }}>
+    <AuthContext.Provider value={{ user, userData, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );

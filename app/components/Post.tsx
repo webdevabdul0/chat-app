@@ -49,16 +49,18 @@ import {
 } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; // For hiding the title visually
 import { motion } from "framer-motion";
+import { X } from "lucide-react";
 
 const Post = ({ post }) => {
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
   const [open, setOpen] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
   const [postOwner, setPostOwner] = useState<{
     username: string;
-    profilePicture?: string;
+    profilePic?: string;
     fullName: string;
   } | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -177,9 +179,9 @@ const Post = ({ post }) => {
         {postOwner && (
           <div className="flex items-center space-x-2">
             <Avatar className="w-10 h-10">
-              {postOwner.profilePicture ? (
+              {postOwner.profilePic ? (
                 <AvatarImage
-                  src={postOwner.profilePicture}
+                  src={postOwner.profilePic}
                   alt={postOwner.username}
                 />
               ) : (
@@ -278,20 +280,41 @@ const Post = ({ post }) => {
       </p>
 
       {post.imageUrl && (
-        <div
-          className="w-full relative overflow-hidden cursor-pointer"
-          style={{ aspectRatio: "1 / 1" }}
-          onClick={() => setIsPreviewOpen(true)}
-        >
-          <Image
-            src={post.imageUrl}
-            alt="Post Image"
-            fill
-            className="object-cover rounded-lg"
-          />
-        </div>
-      )}
+        <>
+          <div
+            className="w-full relative overflow-hidden cursor-pointer"
+            onClick={() => setPreviewImage(post.imageUrl)}
+          >
+            <Image
+              src={post.imageUrl}
+              alt="Post Image"
+              width={500}
+              height={500}
+              className="w-full h-auto rounded-lg"
+            />
+          </div>
 
+          {/* Image Preview with Backdrop */}
+          {previewImage && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex justify-center items-center z-50">
+              {/* Close Button */}
+              <button
+                onClick={() => setPreviewImage(null)}
+                className="absolute top-5 right-5 p-2 bg-white/30 rounded-full"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+
+              {/* Full Image Display */}
+              <img
+                src={previewImage}
+                alt="Preview"
+                className="max-w-full max-h-screen object-contain rounded-lg"
+              />
+            </div>
+          )}
+        </>
+      )}
       <div className="flex items-center space-x-2 mt-4">
         <button
           onClick={toggleLike}

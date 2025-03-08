@@ -57,7 +57,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="w-full hidden xl:flex">
+      <div className="w-full relative">
         <RightPanel />
       </div>
     </div>
