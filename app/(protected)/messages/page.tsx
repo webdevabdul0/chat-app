@@ -6,6 +6,8 @@ import { useChat } from "@/app/ChatProvider";
 import { useAuth } from "@/app/provider";
 import { db } from "@/lib/firebase"; // Import Firebase config
 import { doc, getDoc } from "firebase/firestore";
+import NewChatDialog from "./components/NewChatDialog"; // Import the dialog component
+import NewGroupDialog from "./components/NewGroupDialog";
 import {
   ChannelList,
   Channel,
@@ -13,9 +15,16 @@ import {
   MessageInput,
   Window,
 } from "stream-chat-react";
-import { MessageSquareText, ArrowLeft, Loader2 } from "lucide-react";
+import {
+  MessageSquareText,
+  ArrowLeft,
+  Loader2,
+  Settings,
+  Plus,
+} from "lucide-react";
 import CustomChannelHeader from "./components/CustomChannelHeader";
 import ChatMember from "./components/ChatMember";
+import { Button } from "@/components/ui/button";
 
 const CustomChannelPreview = ({
   channel,
@@ -70,7 +79,7 @@ const CustomChannelPreview = ({
   return (
     <div
       className={`flex items-center justify-between p-3 m-2 rounded-lg cursor-pointer transition-all 
-        ${isSelected ? "bg-primary/10" : "hover:bg-primary/5"}`}
+        ${isSelected ? "bg-primary/5" : "hover:bg-primary/5"}`}
       onClick={() => {
         setActiveChannel(channel);
         setSelectedChannel(channel);
@@ -91,7 +100,7 @@ const CustomChannelPreview = ({
           </div>
         )}
         <div>
-          <span className="font-medium block text-purple-900">
+          <span className="font-semibold block text-black/80 ">
             {recipientName}
           </span>
           <span className="text-sm text-gray-500 block truncate w-48">
@@ -107,6 +116,8 @@ const MessagesPage = () => {
   const { chatClient } = useChat();
   const router = useRouter();
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [open, setOpen] = useState(false); // State for dialog
+  const [openGroup, setOpenGroup] = useState(false); // State for dialog
   const [showChatWindow, setShowChatWindow] = useState(false);
 
   if (!chatClient)
@@ -120,16 +131,17 @@ const MessagesPage = () => {
     <div className="flex h-screen bg-purple-50">
       {/* Sidebar */}
       <div
-        className={`w-full sm:w-1/3 md:w-1/5 bg-white pt-20 xl:pt-4 border-r flex flex-col ${
+        className={`w-full sm:w-1/3 xl:w-1/5 bg-white pt-20 xl:pt-4 border-r flex flex-col ${
           showChatWindow ? "hidden sm:flex" : "flex"
         }`}
       >
-        <div className="p-4 text-lg font-semibold border-b flex items-center justify-between ">
+        <div className="p-4 text-lg font-semibold border-b flex items-center justify-between">
           <div className="flex items-center text-primary text-xl gap-3 font-semibold">
             <MessageSquareText className="text-primary" /> Messages
           </div>
         </div>
 
+        {/* Channel List */}
         <ChannelList
           filters={{
             type: "messaging",
@@ -145,11 +157,32 @@ const MessagesPage = () => {
             />
           )}
         />
+
+        {/* Buttons Section */}
+        <div className="mt-auto p-4 flex flex-row sm:flex-col gap-5">
+          <Button
+            onClick={() => setOpen(true)}
+            className="w-full bg-primary text-white rounded-xl text-base py-5 flex items-center gap-2 font-semibold hover:bg-primary/90"
+          >
+            <Plus className="w-5 h-5" /> New Chat
+          </Button>
+
+          <NewChatDialog open={open} setOpen={setOpen} />
+
+          <Button
+            className="w-full bg-primary/5 border border-primary  text-primary rounded-xl text-base py-5 flex items-center gap-2 font-semibold hover:bg-primary/20"
+            onClick={() => setOpenGroup(true)}
+          >
+            <Plus className="w-5 h-5" /> New Group Chat
+          </Button>
+
+          <NewGroupDialog open={openGroup} setOpen={setOpenGroup} />
+        </div>
       </div>
 
       {/* Chat Window - Overlay on Mobile */}
       <div
-        className={`w-full sm:w-2/3 md:w-3/5 flex flex-col bg-white border-r ${
+        className={`w-full sm:w-2/3 xl:w-3/5 flex flex-col bg-white border-r ${
           showChatWindow
             ? "fixed inset-0 z-50 bg-white sm:relative"
             : "hidden sm:flex"
@@ -180,7 +213,7 @@ const MessagesPage = () => {
       </div>
 
       {/* Right Sidebar - Member Info (Hidden on small devices) */}
-      <div className="hidden md:w-1/5 bg-secondary md:flex flex-col p-4">
+      <div className="hidden xl:w-1/5 bg-secondary xl:flex flex-col p-4">
         <h2 className="text-black/80 font-semibold text-xl mb-4">
           Chat Members
         </h2>
