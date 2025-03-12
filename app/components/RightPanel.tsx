@@ -58,7 +58,7 @@ export default function RightPanel() {
       <aside
         className={`fixed top-0 right-0 w-full sm:w-80 h-screen bg-secondary p-4 pb-8 pt-8 xl:pt-[70px] transition-transform ${
           isOpen ? "translate-x-0" : "translate-x-full"
-        } z-50 shadow-lg xl:translate-x-0 `}
+        } z-40 shadow-lg xl:translate-x-0 `}
       >
         {/* Close Button (Only on Small Screens) */}
 

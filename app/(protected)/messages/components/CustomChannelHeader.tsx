@@ -81,6 +81,7 @@ const CustomChannelHeader = () => {
 
       {/* Right: Actions (Call, Video, More Options) */}
       <div className="flex items-center gap-3">
+        {/* Call & Video Buttons  
         {!callStarted ? (
           <>
             <button
@@ -105,6 +106,8 @@ const CustomChannelHeader = () => {
         ) : (
           <CallComponent isVideoCall={isVideoCall} />
         )}
+
+        */}
 
         {/* More Options */}
         <div className="relative">

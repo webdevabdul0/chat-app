@@ -9,6 +9,12 @@ import {
   query,
   orderBy,
   onSnapshot,
+  updateDoc,
+  increment,
+  arrayRemove,
+  arrayUnion,
+  getDocs,
+  where,
 } from "firebase/firestore";
 import { deleteDoc } from "firebase/firestore";
 import { deleteObject, ref } from "firebase/storage";
@@ -31,7 +37,7 @@ import CommentsList from "./CommentsList";
 import { toast } from "sonner";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, MessageSquareMore } from "lucide-react";
+import { Heart, MessageSquareMore, Pencil } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
 import { Trash2, MoreVertical } from "lucide-react";
 import {
@@ -50,10 +56,12 @@ import {
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; // For hiding the title visually
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
+import EditPost from "./EditPostPopup";
 
 const Post = ({ post }) => {
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
+
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [toastOpen, setToastOpen] = useState(false);
   const [open, setOpen] = useState(false);
@@ -64,16 +72,25 @@ const Post = ({ post }) => {
     fullName: string;
   } | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
+  const openEditModal = () => setIsEditOpen(true);
+  const closeEditModal = () => setIsEditOpen(false);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [comments, setComments] = useState([]);
 
   useEffect(() => {
-    if (user) {
-      setLiked(
-        Array.isArray(post.likes) ? post.likes.includes(user.uid) : false
-      );
-    }
-  }, [post.likes, user]);
+    const likesRef = collection(db, "posts", post.id, "likes");
+
+    const unsubscribe = onSnapshot(likesRef, (snapshot) => {
+      setLikeCount(snapshot.size);
+      setLiked(snapshot.docs.some((doc) => doc.id === user?.uid));
+    });
+
+    return () => unsubscribe();
+  }, [post.id, user]);
 
   useEffect(() => {
     const fetchPostOwner = async () => {
@@ -106,28 +123,42 @@ const Post = ({ post }) => {
     if (!user) return;
 
     const likeRef = doc(db, "posts", post.id, "likes", user.uid);
-    const likeDoc = await getDoc(likeRef);
+    const notificationQuery = query(
+      collection(db, "notifications"),
+      where("userId", "==", post.userId),
+      where("senderId", "==", user.uid),
+      where("postId", "==", post.id)
+    );
 
     try {
-      if (likeDoc.exists()) {
-        // Unlike (Delete document)
+      const likeSnap = await getDoc(likeRef);
+
+      if (likeSnap.exists()) {
+        // Unlike: Remove like document
         await deleteDoc(likeRef);
         setLiked(false);
         setLikeCount((prev) => prev - 1);
+
+        // Remove the notification if it exists
+        const notificationSnap = await getDocs(notificationQuery);
+        notificationSnap.forEach(async (doc) => {
+          await deleteDoc(doc.ref);
+        });
       } else {
-        // Like (Create document)
+        // Like: Create like document
         await setDoc(likeRef, {
           userId: user.uid,
-          createdAt: serverTimestamp(),
+          createdAt: new Date(),
         });
-
         setLiked(true);
         setLikeCount((prev) => prev + 1);
 
-        // 🔔 Send notification if liking someone else's post
+        // Send notification if it's someone else's post
         if (post.userId !== user.uid) {
           await addDoc(collection(db, "notifications"), {
-            userId: post.userId,
+            userId: post.userId, // Post owner
+            senderId: user.uid, // User who liked
+            postId: post.id, // Post reference
             message: `${user.displayName} liked your post: "${post.caption}".`,
             createdAt: serverTimestamp(),
           });
@@ -226,18 +257,25 @@ const Post = ({ post }) => {
             <>
               {String(user?.uid) === String(post?.userId) && (
                 <DropdownMenu modal={false}>
-                  {" "}
-                  {/* Ensures menu stays open */}
                   <DropdownMenuTrigger asChild>
                     <MoreVertical className="w-5 h-5 text-gray-600" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    {/* AlertDialog for Confirmation */}
+                    {/* Edit Post Button */}
+                    <DropdownMenuItem
+                      className="flex items-center space-x-2"
+                      onClick={() => setIsEditOpen(true)} // Open edit modal
+                    >
+                      <Pencil className="w-5 h-5" />
+                      <span>Edit</span>
+                    </DropdownMenuItem>
+
+                    {/* Delete Post Button */}
                     <AlertDialog open={open} onOpenChange={setOpen}>
                       <AlertDialogTrigger asChild>
                         <DropdownMenuItem
                           className="text-red-500 flex items-center space-x-2"
-                          onSelect={(e) => e.preventDefault()} // Prevent closing menu
+                          onSelect={(e) => e.preventDefault()}
                         >
                           <Trash2 className="w-5 h-5" />
                           <span>Delete</span>
@@ -269,6 +307,13 @@ const Post = ({ post }) => {
               )}
             </>
           )}
+
+          {/* Edit Post Dialog */}
+          <EditPost
+            postId={post.id}
+            isOpen={isEditOpen}
+            onClose={closeEditModal}
+          />
         </div>
       </div>
 
@@ -279,23 +324,33 @@ const Post = ({ post }) => {
         {post.caption}
       </p>
 
-      {post.imageUrl && (
+      {post.imageUrl && post.imageUrl.trim() !== "" && (
         <>
           <div
             className="w-full relative overflow-hidden cursor-pointer"
-            onClick={() => setPreviewImage(post.imageUrl)}
+            onClick={() =>
+              post.mediaType === "image" && setPreviewImage(post.imageUrl)
+            }
           >
-            <Image
-              src={post.imageUrl}
-              alt="Post Image"
-              width={500}
-              height={500}
-              className="w-full h-auto rounded-lg"
-            />
+            {post.mediaType === "image" ? (
+              <Image
+                src={post.imageUrl}
+                alt="Post Image"
+                width={500}
+                height={500}
+                className="w-full h-auto rounded-lg"
+              />
+            ) : (
+              <video
+                src={post.imageUrl}
+                controls
+                className="w-full h-auto rounded-lg"
+              />
+            )}
           </div>
 
           {/* Image Preview with Backdrop */}
-          {previewImage && (
+          {previewImage && previewImage.trim() !== "" && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex justify-center items-center z-50">
               {/* Close Button */}
               <button
@@ -315,10 +370,11 @@ const Post = ({ post }) => {
           )}
         </>
       )}
+
       <div className="flex items-center space-x-2 mt-4">
         <button
           onClick={toggleLike}
-          className="flex items-center gap-2 p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition"
+          className="flex items-center gap-2 p-2 rounded-full "
         >
           <motion.div
             animate={{ scale: liked ? 1.2 : 1 }}
@@ -330,12 +386,12 @@ const Post = ({ post }) => {
               <Heart className="w-6 h-6 text-black" />
             )}
           </motion.div>
-          <span className="text-sm font-medium">{likeCount}</span>
+          {/*<span className="text-sm font-medium">Like</span>*/}
         </button>
 
         {/* Comments Button with Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogTrigger className="flex items-center gap-2 p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition">
+          <DialogTrigger className="flex items-center gap-2 p-2 rounded-full ">
             <motion.div
               animate={{ scale: 1.2 }}
               transition={{ type: "spring", stiffness: 300, damping: 10 }}

@@ -15,7 +15,6 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("🔹 Generating token for:", userId);
     const token = chatClient.createToken(userId);
 
     // ✅ Ensure user exists in Stream

@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import { useAuth } from "@/app/provider";
 import { usePathname } from "next/navigation";
@@ -11,10 +9,10 @@ import {
   Bell,
   MessageSquare,
   Settings,
-  PlusCircle,
   LogOut,
   Menu,
   X,
+  User,
 } from "lucide-react";
 
 export default function Sidebar({ isFixed }: { isFixed: boolean }) {
@@ -34,7 +32,7 @@ export default function Sidebar({ isFixed }: { isFixed: boolean }) {
       {/* Hamburger Icon on Mobile */}
       {!isSidebarOpen && (
         <button
-          className="xl:hidden fixed top-4 left-4 z-50 p-2 bg-secondary rounded-xl shadow-md "
+          className="xl:hidden fixed top-4 left-4 z-50 p-2 bg-secondary rounded-xl shadow-md"
           onClick={() => setIsSidebarOpen(true)}
         >
           <Menu className="w-7 h-7 text-primary" />
@@ -101,6 +99,29 @@ export default function Sidebar({ isFixed }: { isFixed: boolean }) {
             );
           })}
 
+          {/* Profile Link */}
+          {userData && (
+            <Link
+              href={`/profile/${userData.id}`}
+              onClick={() => setIsSidebarOpen(false)}
+              className={`flex items-center gap-3 p-3 rounded-xl text-base font-medium transition border 
+              ${
+                pathname === `/profile/${userData.id}`
+                  ? "bg-primary/10 border-primary text-primary"
+                  : "border-transparent text-black/40 hover:bg-primary/10"
+              }`}
+            >
+              <User
+                className={`w-6 h-6 ${
+                  pathname === `/profile/${userData.id}`
+                    ? "text-primary"
+                    : "text-black/40"
+                }`}
+              />
+              Profile
+            </Link>
+          )}
+
           {/* Settings Button */}
           <button
             onClick={() => {
@@ -112,23 +133,13 @@ export default function Sidebar({ isFixed }: { isFixed: boolean }) {
             <Settings className="w-6 h-6 text-black/40" />
             Settings
           </button>
-
-          {/* Create Post Link */}
-          <Link
-            href="/create-post"
-            onClick={() => setIsSidebarOpen(false)} // Close sidebar on click
-            className="flex items-center gap-3 p-3 rounded-xl text-base font-medium transition bg-primary text-white hover:bg-primary/90"
-          >
-            <PlusCircle className="w-6 h-6 text-white" />
-            Create Post
-          </Link>
         </nav>
 
         <div className="mt-auto">
           {userData && (
             <button
               onClick={logout}
-              className="w-full  p-3 flex items-center justify-center gap-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
+              className="w-full p-3 flex items-center justify-center gap-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
             >
               Logout
               <LogOut className="w-6 h-6 text-white" />

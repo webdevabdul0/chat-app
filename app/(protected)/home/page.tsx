@@ -7,6 +7,7 @@ import Post from "@/app/components/Post"; // Import the Post component
 import Image from "next/image";
 import RightPanel from "@/app/components/RightPanel";
 import { Ghost } from "lucide-react"; // Import an icon for better UI
+import NewPost from "@/app/components/NewPost";
 
 interface PostData {
   id: string;
@@ -39,6 +40,10 @@ export default function HomePage() {
     <div className="flex-1  justify-center">
       <div className="max-w-3xl w-full mx-auto mt-7 mb-40 p-4 flex flex-col items-center">
         <Image src="/logo.png" alt="logo" width={100} height={100} />
+
+        <div className="my-5 sm:my-10 w-full">
+          <NewPost />
+        </div>
 
         <div className="w-full mt-8 space-y-8">
           {posts.length > 0 ? (
