@@ -17,6 +17,7 @@ import {
 
 export default function Sidebar({ isFixed }: { isFixed: boolean }) {
   const { userData, logout } = useAuth();
+  const { user } = useAuth();
   const pathname = usePathname();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -102,18 +103,18 @@ export default function Sidebar({ isFixed }: { isFixed: boolean }) {
           {/* Profile Link */}
           {userData && (
             <Link
-              href={`/profile/${userData.id}`}
+              href={`/profile/${user.uid}`}
               onClick={() => setIsSidebarOpen(false)}
               className={`flex items-center gap-3 p-3 rounded-xl text-base font-medium transition border 
               ${
-                pathname === `/profile/${userData.id}`
+                pathname === `/profile/${user.uid}`
                   ? "bg-primary/10 border-primary text-primary"
                   : "border-transparent text-black/40 hover:bg-primary/10"
               }`}
             >
               <User
                 className={`w-6 h-6 ${
-                  pathname === `/profile/${userData.id}`
+                  pathname === `/profile/${user.uid}`
                     ? "text-primary"
                     : "text-black/40"
                 }`}

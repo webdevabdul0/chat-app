@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
 import { db } from "@/lib/firebase";
@@ -10,6 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 const NewGroupDialog = ({ open, setOpen }) => {
   const [users, setUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [groupName, setGroupName] = useState("");
   const { chatClient } = useChat();
   const currentUserID = chatClient?.userID;
 
@@ -41,25 +43,36 @@ const NewGroupDialog = ({ open, setOpen }) => {
   };
 
   const createGroupChat = async () => {
-    if (selectedUsers.length < 2) return; // Require at least 2 other users
+    if (selectedUsers.length < 2 || !groupName.trim()) return; // Require at least 2 users & a name
 
     const groupMembers = [currentUserID, ...selectedUsers];
     const channelID = `group_${uuidv4()}`; // Generate a unique, short ID
     const channel = chatClient.channel("messaging", channelID, {
-      name: "New Group",
+      name: groupName.trim(), // Use entered group name
       members: groupMembers,
     });
 
     await channel.watch();
     setOpen(false);
     setSelectedUsers([]);
+    setGroupName(""); // Reset after creation
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-md p-6">
-        <DialogTitle>Select Users for Group Chat</DialogTitle>
-        <div className="flex flex-col gap-4">
+        <DialogTitle>Create a New Group Chat</DialogTitle>
+
+        {/* Group Name Input */}
+        <Input
+          type="text"
+          placeholder="Enter Group Name"
+          value={groupName}
+          onChange={(e) => setGroupName(e.target.value)}
+          className="w-full my-3"
+        />
+
+        <div className="flex flex-col gap-4 max-h-60 overflow-y-auto">
           {users.map((user) => (
             <button
               key={user.id}
@@ -73,7 +86,7 @@ const NewGroupDialog = ({ open, setOpen }) => {
               {user.profilePic ? (
                 <img
                   src={user.profilePic}
-                  alt={user.name}
+                  alt={user.fullName}
                   className="w-10 h-10 rounded-full object-cover"
                 />
               ) : (
@@ -81,16 +94,17 @@ const NewGroupDialog = ({ open, setOpen }) => {
                   <User className="w-5 h-5" />
                 </div>
               )}
-              <div>
-                <p className="font-medium">{user.name}</p>
+              <div className="text-start">
+                <p className="font-medium">{user.fullName}</p>
                 <p className="text-sm text-gray-500">@{user.username}</p>
               </div>
             </button>
           ))}
         </div>
+
         <Button
           onClick={createGroupChat}
-          disabled={selectedUsers.length < 2}
+          disabled={selectedUsers.length < 2 || !groupName.trim()}
           className="w-full mt-4"
         >
           Create Group Chat

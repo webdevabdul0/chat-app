@@ -11,7 +11,12 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useChat } from "@/app/ChatProvider";
 
-const NewChatDialog = ({ open, setOpen }) => {
+const NewChatDialog = ({
+  open,
+  setOpen,
+  setSelectedChannel,
+  setShowChatWindow,
+}) => {
   const [users, setUsers] = useState([]);
   const { chatClient } = useChat();
   const currentUserID = chatClient?.userID;
@@ -36,8 +41,15 @@ const NewChatDialog = ({ open, setOpen }) => {
       members: [currentUserID, user.id],
     });
 
-    await channel.watch(); // Ensure channel exists
-    setOpen(false); // Close dialog
+    try {
+      await channel.watch(); // Ensure channel exists
+      await channel.show(); // Unhide the chat if it was hidden
+      setSelectedChannel(channel); // Set the active chat
+      setShowChatWindow(true); // Show the chat window
+      setOpen(false); // Close dialog
+    } catch (error) {
+      console.error("Error starting chat:", error);
+    }
   };
 
   return (
@@ -54,7 +66,7 @@ const NewChatDialog = ({ open, setOpen }) => {
               {user.profilePic ? (
                 <img
                   src={user.profilePic}
-                  alt={user.name}
+                  alt={user.fullName}
                   className="w-10 h-10 rounded-full object-cover"
                 />
               ) : (
@@ -62,8 +74,8 @@ const NewChatDialog = ({ open, setOpen }) => {
                   <User className="w-5 h-5" />
                 </div>
               )}
-              <div>
-                <p className="font-medium">{user.name}</p>
+              <div className="text-start">
+                <p className="font-medium">{user.fullName}</p>
                 <p className="text-sm text-gray-500">@{user.username}</p>
               </div>
             </button>

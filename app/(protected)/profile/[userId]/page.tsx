@@ -14,9 +14,10 @@ import { useParams } from "next/navigation";
 import { useAuth } from "@/app/provider";
 import MessageButton from "@/app/components/MessageButton";
 import Post from "@/app/components/Post";
-import { Ghost } from "lucide-react";
+import { Ghost, Settings, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RightPanel from "@/app/components/RightPanel";
+import SettingsPopup from "@/app/components/SettingsPopup";
 
 interface User {
   id: string;
@@ -42,6 +43,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -88,13 +90,11 @@ export default function ProfilePage() {
       {/* Profile & Posts Section (Centered) */}
       <div className="max-w-3xl w-full mx-auto px-4 mt-7 mb-40 gap-8">
         {user ? (
-          <div>
-            <div className="bg-[#DFD0FB] mb-5 -z-10  rounded-xl text-white relative w-full h-24 md:h-36 xl:h-48"></div>
-
-            <div className="flex flex-row items-center justify-between">
-              <div className="flex items-center space-x-4">
+          <div className="py-10">
+            <div className="flex flex-col sm:flex-row items-center justify-between ">
+              <div className="flex flex-col sm:flex-row items-center space-x-4">
                 {!user.profilePic ? (
-                  <Avatar className="w-28 h-28">
+                  <Avatar className="w-24 h-24">
                     <AvatarImage src={user.profilePic} alt={user.fullName} />
                     <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
                   </Avatar>
@@ -102,22 +102,37 @@ export default function ProfilePage() {
                   <img
                     src={user.profilePic}
                     alt="Profile"
-                    className="w-20 h-20 rounded-full object-cover"
+                    className="w-24 h-24 rounded-full object-cover"
                   />
                 )}
 
-                <div>
-                  <h1 className="text-xxl font-bold">{user.fullName}</h1>
+                <div className="text-center sm:text-start mt-5 sm:mt-0">
+                  <h1 className="text-lg font-bold ">{user.fullName}</h1>
                   <p className="text-gray-400">{user.username}</p>
                 </div>
               </div>
 
-              {currentUser && currentUser.uid !== user.id && (
+              {currentUser && currentUser.uid !== user.id ? (
                 <div className="mt-4">
                   <MessageButton
                     recipientId={user.id}
                     recipientName={user.fullName}
                   />
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <button
+                    onClick={() => setIsPopupOpen(true)}
+                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-base font-medium transition border border-transparent 
+      text-black/40 bg-primary text-white hover:bg-primary/90"
+                  >
+                    <User className="w-6 h-6" />
+                    Edit Profile
+                  </button>
+
+                  {isPopupOpen && (
+                    <SettingsPopup onClose={() => setIsPopupOpen(false)} />
+                  )}
                 </div>
               )}
             </div>
