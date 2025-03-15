@@ -112,6 +112,12 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              <div className=" flex sm:hidden">
+                <p className="text-base font-semibold text-black">
+                  {user.description}
+                </p>
+              </div>
+
               {currentUser && currentUser.uid !== user.id ? (
                 <div className="mt-4">
                   <MessageButton
@@ -140,6 +146,12 @@ export default function ProfilePage() {
         ) : (
           <p className="text-white">User not found.</p>
         )}
+
+        <div className=" hidden sm:flex">
+          <p className="text-base font-semibold text-black">
+            {user.description}
+          </p>
+        </div>
 
         <h2 className="text-xl font-bold mt-6 text-black">Posts</h2>
 

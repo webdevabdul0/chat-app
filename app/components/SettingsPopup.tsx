@@ -39,6 +39,7 @@ const SettingsPopup = ({ onClose }) => {
     username: userData?.username || "",
     location: userData?.location || "",
     profilePic: userData?.profilePic,
+    description: userData?.description || "",
   });
 
   const fileInputRef = useRef(null);
@@ -80,6 +81,7 @@ const SettingsPopup = ({ onClose }) => {
         fullName: form.fullName,
         username: form.username,
         location: form.location,
+        description: form.description,
         profilePicture: userData?.profilePicture || "/default-avatar.jpg",
       });
 
@@ -324,6 +326,18 @@ const SettingsPopup = ({ onClose }) => {
             name="fullName"
             value={form.fullName}
             placeholder="Enter full name"
+            onChange={handleChange}
+          />
+
+          <Label htmlFor="description" className="mt-4">
+            Description
+          </Label>
+          <Input
+            id="description"
+            type="text"
+            name="description"
+            value={form.description}
+            placeholder="Enter Description"
             onChange={handleChange}
           />
 

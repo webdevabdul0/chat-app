@@ -5,11 +5,13 @@ import {
   onSnapshot,
   doc,
   getDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase"; // Make sure to import `auth`
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Trash } from "lucide-react"; // Import the Trash icon from Lucide React
 
 const CommentsList = ({ postId }) => {
   const [comments, setComments] = useState([]);
@@ -40,6 +42,28 @@ const CommentsList = ({ postId }) => {
 
     return () => unsubscribe();
   }, [postId]);
+
+  // Function to handle deleting a comment
+  const handleDelete = async (commentId) => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    // Find the comment
+    const commentToDelete = comments.find(
+      (comment) => comment.id === commentId
+    );
+
+    if (commentToDelete?.userId === userId) {
+      try {
+        // Delete the comment from Firestore
+        await deleteDoc(doc(db, "posts", postId, "comments", commentId));
+      } catch (error) {
+        console.error("Error deleting comment:", error);
+      }
+    } else {
+      console.error("You can only delete your own comments.");
+    }
+  };
 
   return (
     <div className="mt-2 space-y-2">
@@ -78,6 +102,16 @@ const CommentsList = ({ postId }) => {
                 : "Unknown time"}
             </span>
           </div>
+
+          {/* Delete Icon (Trash Bin) */}
+          {comment.userId === auth.currentUser?.uid && (
+            <div
+              className="ml-4 cursor-pointer"
+              onClick={() => handleDelete(comment.id)}
+            >
+              <Trash className="text-gray-500 hover:text-red-500 transition" />
+            </div>
+          )}
         </Card>
       ))}
     </div>

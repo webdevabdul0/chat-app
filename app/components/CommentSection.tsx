@@ -72,16 +72,18 @@ const CommentSection = ({ postId }) => {
           className="pr-12"
         />
         {/* Emoji Icon */}
-        <motion.div
-          whileTap={{ scale: 0.8 }}
-          whileHover={{ scale: 1.2 }}
-          transition={{ type: "spring", stiffness: 300, damping: 10 }}
-          className="absolute right-3 top-1/3 transform cursor-pointer text-gray-400"
-          onClick={() => setEmojiPickerOpen((prev) => !prev)}
-        >
-          <Smile />
-        </motion.div>
 
+        <div className="hidden sm:block">
+          <motion.div
+            whileTap={{ scale: 0.8 }}
+            whileHover={{ scale: 1.2 }}
+            transition={{ type: "spring", stiffness: 300, damping: 10 }}
+            className="absolute right-3 top-1/3 transform cursor-pointer text-gray-400"
+            onClick={() => setEmojiPickerOpen((prev) => !prev)}
+          >
+            <Smile />
+          </motion.div>
+        </div>
         {/* Emoji Picker Dropdown */}
         {emojiPickerOpen && (
           <div className="absolute bottom-12 right-0 z-50">

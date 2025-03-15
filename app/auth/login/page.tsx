@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/app/provider";
-import { login } from "@/lib/auth";
+import { login, loginWithPhone, verifyOTPForLogin } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,9 @@ import Image from "next/image";
 import auth from "@/public/auth.png";
 
 export default function LoginPage() {
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ identifier: "", password: "" });
+  const [otp, setOtp] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -36,7 +38,38 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
 
-    const res = await login(form.email, form.password);
+    const isEmail = /\S+@\S+\.\S+/.test(form.identifier);
+    let res;
+
+    if (isEmail) {
+      res = await login(form.identifier, form.password);
+    } else {
+      res = await loginWithPhone(form.identifier);
+      if (res.success) {
+        setConfirmationResult(res.confirmationResult);
+      }
+    }
+
+    setLoading(false);
+
+    if (!res.success) {
+      setError(res.error);
+      return;
+    }
+
+    if (isEmail) {
+      router.push("/home");
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!confirmationResult || !otp) {
+      setError("Please enter the OTP.");
+      return;
+    }
+
+    setLoading(true);
+    const res = await verifyOTPForLogin(confirmationResult, otp);
     setLoading(false);
 
     if (!res.success) {
@@ -72,52 +105,84 @@ export default function LoginPage() {
                 <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
               )}
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    placeholder="Enter Email"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    name="password"
-                    placeholder="Enter Password"
-                    value={form.password}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="flex flex-row justify-between items-center">
-                  <Button
-                    type="submit"
-                    className="px-6 py-6 rounded-2xl text-base"
-                    disabled={loading}
-                  >
-                    {loading ? "Logging in..." : "Log In"}
-                  </Button>
+                {!confirmationResult && (
+                  <div>
+                    <Label htmlFor="identifier">Email or Phone</Label>
+                    <Input
+                      id="identifier"
+                      type="text"
+                      name="identifier"
+                      placeholder="Enter Email or Phone"
+                      value={form.identifier}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                )}
 
-                  <p className="text-sm mt-4 text-start font-semibold ">
+                {/\S+@\S+\.\S+/.test(form.identifier) ? (
+                  <div>
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      name="password"
+                      placeholder="Enter Password"
+                      value={form.password}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+                ) : confirmationResult ? (
+                  <div>
+                    <Label htmlFor="otp">Enter OTP</Label>
+                    <Input
+                      id="otp"
+                      type="text"
+                      name="otp"
+                      placeholder="Enter OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      required
+                    />
+                  </div>
+                ) : null}
+
+                <div className="flex flex-row justify-between items-center">
+                  {!confirmationResult ? (
+                    <Button
+                      type="submit"
+                      className="px-6 py-6 rounded-2xl text-base"
+                      disabled={loading}
+                    >
+                      {loading ? "Logging in..." : "Log In"}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      className="px-6 py-6 rounded-2xl text-base"
+                      onClick={handleVerifyOtp}
+                      disabled={loading}
+                    >
+                      {loading ? "Verifying OTP..." : "Verify OTP"}
+                    </Button>
+                  )}
+
+                  <p className="text-sm mt-4 text-start font-semibold">
                     <Link href="/" className="text-black/40">
                       Forgot Password?
                     </Link>
                   </p>
                 </div>
               </form>
-              <p className="text-sm mt-4 text-start font-semibold ">
+
+              <p className="text-sm mt-4 text-start font-semibold">
                 Don’t have an account?{" "}
                 <Link href="/auth/signup" className="text-primary">
                   Sign Up
                 </Link>
               </p>
+
               <div className="text-center mt-4 text-sm">or</div>
 
               <h3 className="w-full text-start font-semibold text-black text-xl mt-4">
@@ -137,6 +202,7 @@ export default function LoginPage() {
           </Card>
         </div>
       </div>
+      <div id="recaptcha-container"></div>
     </div>
   );
 }

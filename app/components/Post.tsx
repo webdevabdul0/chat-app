@@ -57,6 +57,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; // For hiding 
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import EditPost from "./EditPostPopup";
+import ShareButton from "./ShareButton";
 
 const Post = ({ post }) => {
   const { user } = useAuth();
@@ -110,10 +111,24 @@ const Post = ({ post }) => {
   // 🔥 FIX: Fetch Comments in Real-Time Using onSnapshot
   useEffect(() => {
     const commentsRef = collection(db, "posts", post.id, "comments");
-    const q = query(commentsRef, orderBy("createdAt", "desc")); // 🔹 Fetch newest comments first
+    const q = query(commentsRef, orderBy("createdAt", "desc"));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setComments(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const commentsData = await Promise.all(
+        snapshot.docs.map(async (commentDoc) => {
+          const commentData = commentDoc.data();
+          const userRef = doc(db, "users", commentData.userId);
+          const userSnap = await getDoc(userRef);
+
+          return {
+            id: commentDoc.id,
+            ...commentData,
+            user: userSnap.exists() ? userSnap.data() : null,
+          };
+        })
+      );
+
+      setComments(commentsData);
     });
 
     return () => unsubscribe();
@@ -344,7 +359,9 @@ const Post = ({ post }) => {
               <video
                 src={post.imageUrl}
                 controls
-                className="w-full h-auto rounded-lg"
+                autoPlay
+                muted
+                className="w-full h-auto rounded-lg max-h-[500px]" // Set a max height
               />
             )}
           </div>
@@ -392,12 +409,7 @@ const Post = ({ post }) => {
         {/* Comments Button with Modal */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
           <DialogTrigger className="flex items-center gap-2 p-2 rounded-full ">
-            <motion.div
-              animate={{ scale: 1.2 }}
-              transition={{ type: "spring", stiffness: 300, damping: 10 }}
-            >
-              <MessageSquareMore className="w-6 h-6 text-black" />
-            </motion.div>
+            <MessageSquareMore className="w-7 h-7 text-black" />
           </DialogTrigger>
 
           <DialogContent>
@@ -410,35 +422,59 @@ const Post = ({ post }) => {
             <CommentsList postId={post.id} />
           </DialogContent>
         </Dialog>
+
+        <ShareButton
+          text={`📢Shared a post with you by ${
+            postOwner?.fullName || "someone"
+          }: "${post.caption}"`}
+          attachments={
+            post.imageUrl
+              ? [
+                  {
+                    type: post.mediaType || "image",
+                    ...(post.mediaType === "video"
+                      ? { asset_url: post.imageUrl }
+                      : { image_url: post.imageUrl }),
+                  },
+                ]
+              : []
+          }
+        />
       </div>
 
       {/* Inline Comments Preview */}
       <div className="mt-4">
-        {/*This is a Section Breaker */}
         <div className="w-full h-px bg-black/5 my-5"></div>
         {previewComments.map((comment) => (
-          <div
-            key={comment.id}
-            className="flex gap-2 items-start pb-2 text-sm text-black/60 font-semibold"
-          >
-            <p>{comment.text}</p>
+          <div key={comment.id} className="flex items-start gap-2 pb-2">
+            {/* Avatar */}
+            <Avatar className="w-8 h-8">
+              {comment.user?.profilePic ? (
+                <AvatarImage
+                  src={comment.user.profilePic}
+                  alt={comment.user.fullName}
+                />
+              ) : (
+                <AvatarFallback className="bg-primary text-white">
+                  {comment.user?.username?.charAt(0).toUpperCase() || "?"}
+                </AvatarFallback>
+              )}
+            </Avatar>
+
+            <div>
+              {/* Username */}
+              <p className="text-sm font-semibold">
+                {comment.user?.fullName || "Unknown User"}
+              </p>
+              {/* Comment Text */}
+              <p className="text-sm text-black/70">{comment.text}</p>
+            </div>
           </div>
         ))}
+      </div>
 
-        {/* View All Comments Button (Opens Modal) */}
-        {comments.length > 2 && (
-          <button
-            onClick={() => setModalOpen(true)}
-            className="text-primar  text-sm font-semibold mt-2 flex items-center gap-1"
-          >
-            <MessageSquareMore className="w-5 h-5" /> View All Comments (
-            {comments.length})
-          </button>
-        )}
-
-        <div className="mt-4">
-          <CommentSection postId={post.id} />
-        </div>
+      <div className="mt-4">
+        <CommentSection postId={post.id} />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/app/provider";
-import { signup } from "@/lib/auth";
+import { signup, signupWithPhone, verifyOTP } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,7 @@ export default function SignupPage() {
     fullName: "",
     username: "",
     email: "",
+    identifier: "", // Can be email or phone
     password: "",
     confirmPassword: "",
     location: "",
@@ -24,6 +25,8 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+  const [otp, setOtp] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -33,19 +36,61 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
 
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match!");
+    const isEmail = /\S+@\S+\.\S+/.test(form.identifier);
+    let res;
+
+    if (isEmail) {
+      if (form.password !== form.confirmPassword) {
+        setError("Passwords do not match!");
+        return;
+      }
+    }
+
+    setLoading(true);
+
+    if (isEmail) {
+      res = await signup(
+        form.fullName,
+        form.username,
+        form.identifier, // Email
+        form.password,
+        form.location
+      );
+    } else {
+      res = await signupWithPhone(form.identifier); // Phone signup
+      if (res.success) {
+        console.log("Abdul Hanan");
+        setConfirmationResult(res.confirmationResult); // Store confirmation result for OTP verification
+      }
+    }
+
+    setLoading(false);
+
+    if (!res.success) {
+      setError(res.error);
+      return;
+    }
+
+    if (isEmail) {
+      router.push("/home");
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!confirmationResult || !otp) {
+      setError("Please enter the OTP.");
       return;
     }
 
     setLoading(true);
-    const res = await signup(
-      form.fullName,
-      form.username,
-      form.email,
-      form.password,
-      form.location
-    );
+
+    // Pass the fullName, username, and location to verifyOTP
+    const res = await verifyOTP(confirmationResult, otp, {
+      fullName: form.fullName,
+      username: form.username,
+      location: form.location,
+    });
+
     setLoading(false);
 
     if (!res.success) {
@@ -81,89 +126,128 @@ export default function SignupPage() {
                 <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
               )}
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="flex gap-5">
+                {!confirmationResult && (
+                  <div className="flex gap-5">
+                    <div>
+                      <Label htmlFor="fullName">Full Name</Label>
+                      <Input
+                        id="fullName"
+                        type="text"
+                        name="fullName"
+                        placeholder="Enter Full Name"
+                        value={form.fullName}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        type="text"
+                        name="username"
+                        placeholder="Enter Username"
+                        value={form.username}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {!confirmationResult && (
                   <div>
-                    <Label htmlFor="fullName">Full Name</Label>
+                    <Label htmlFor="identifier">Email or Phone</Label>
                     <Input
-                      id="fullName"
-                      type="text"
-                      name="fullName"
-                      placeholder="Enter Full Name"
-                      value={form.fullName}
+                      id="identifier"
+                      type="text" // Accepts both email and phone
+                      name="identifier"
+                      placeholder="Enter Email or Phone"
+                      value={form.identifier}
                       onChange={handleChange}
                       required
                     />
                   </div>
+                )}
+
+                {/\S+@\S+\.\S+/.test(form.identifier) ? (
+                  <>
+                    <div>
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        name="password"
+                        placeholder="Enter Password"
+                        value={form.password}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        name="confirmPassword"
+                        placeholder="Confirm Password"
+                        value={form.confirmPassword}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                  </>
+                ) : confirmationResult ? (
+                  <>
+                    <div>
+                      <Label htmlFor="otp">Enter OTP</Label>
+                      <Input
+                        id="otp"
+                        type="text"
+                        name="otp"
+                        placeholder="Enter OTP"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type="button"
+                      className="px-6 py-6 rounded-2xl text-base"
+                      onClick={handleVerifyOtp}
+                      disabled={loading}
+                    >
+                      {loading ? "Verifying OTP..." : "Verify OTP"}
+                    </Button>
+                  </>
+                ) : null}
+                {!confirmationResult && (
                   <div>
-                    <Label htmlFor="username">Username</Label>
+                    <Label htmlFor="location">Location</Label>
                     <Input
-                      id="username"
+                      id="location"
                       type="text"
-                      name="username"
-                      placeholder="Enter Username"
-                      value={form.username}
+                      name="location"
+                      placeholder="Enter Location"
+                      value={form.location}
                       onChange={handleChange}
                       required
                     />
                   </div>
-                </div>
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    name="email"
-                    placeholder="Enter Email"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    name="password"
-                    placeholder="Enter Password"
-                    value={form.password}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    name="confirmPassword"
-                    placeholder="Confirm Password"
-                    value={form.confirmPassword}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    type="text"
-                    name="location"
-                    placeholder="Enter Location"
-                    value={form.location}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="flex flex-row justify-between items-center">
-                  <Button
-                    type="submit"
-                    className="px-6 py-6 rounded-2xl text-base"
-                    disabled={loading}
-                  >
-                    {loading ? "Signing up..." : "Sign Up"}
-                  </Button>
-                </div>
+                )}
+                {!confirmationResult && (
+                  <div className="flex flex-row justify-between items-center">
+                    <Button
+                      type="submit"
+                      className="px-6 py-6 rounded-2xl text-base"
+                      disabled={loading}
+                    >
+                      {loading ? "Signing up..." : "Sign Up"}
+                    </Button>
+                  </div>
+                )}
               </form>
               <p className="text-sm mt-4 text-start font-semibold">
                 Already have an account?{" "}
@@ -188,6 +272,7 @@ export default function SignupPage() {
           </Card>
         </div>
       </div>
+      <div id="recaptcha-container"></div>
     </div>
   );
 }

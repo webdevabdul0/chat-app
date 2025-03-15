@@ -13,6 +13,9 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "iHere",
   description: "Social App",
+  icons: {
+    icon: "/favicon.ico", // Correct way to set the favicon
+  },
 };
 
 export default function RootLayout({

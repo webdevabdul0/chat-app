@@ -151,7 +151,6 @@ export default function PostInput() {
             type="file"
             accept="video/*"
             className="hidden"
-            capture="environment" // Opens camera directly
             onChange={handleMediaChange}
           />
         </div>
