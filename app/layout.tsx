@@ -28,7 +28,6 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${manrope.variable} antialiased`}>
         <AuthProvider>
-          <AnnouncementPopup />
           {children}
           <Toaster />
         </AuthProvider>

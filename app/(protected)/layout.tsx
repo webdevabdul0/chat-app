@@ -7,6 +7,7 @@ import Sidebar from "@/app/components/Sidebar";
 import ChatProvider from "@/app/ChatProvider"; // ✅ Import ChatProvider
 import { usePathname } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import AnnouncementPopup from "../components/AnnouncementPopup";
 
 export default function ProtectedLayout({
   children,
@@ -36,8 +37,7 @@ export default function ProtectedLayout({
 
   return (
     <ChatProvider>
-      {" "}
-      {/* ✅ Only loads for authenticated users */}
+      <AnnouncementPopup /> {/* ✅ Only loads for authenticated users */}
       <div className="flex">
         <Sidebar isFixed={!isMessagesPage} /> {/* ✅ Pass prop */}
         <main className="flex-1">{children}</main>
