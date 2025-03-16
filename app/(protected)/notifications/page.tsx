@@ -11,7 +11,7 @@ import {
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/app/provider";
 import Image from "next/image";
-import { Heart, MessageSquare, Bell } from "lucide-react";
+import { Heart, MessageSquare, Bell, Book } from "lucide-react";
 
 const NotificationsPage = () => {
   const { user } = useAuth();
@@ -53,6 +53,7 @@ const NotificationsPage = () => {
               // Determine notification type
               const isLike = notif.message.includes("liked");
               const isComment = notif.message.includes("commented");
+              const isBooked = notif.type === "booking"; // Check for booking notification
 
               return (
                 <div
@@ -63,9 +64,11 @@ const NotificationsPage = () => {
                   <div className="text-primary">
                     {isLike ? (
                       <Heart className="w-5 h-5" />
-                    ) : (
+                    ) : isComment ? (
                       <MessageSquare className="w-5 h-5" />
-                    )}
+                    ) : isBooked ? (
+                      <Book className="w-5 h-5" />
+                    ) : null}
                   </div>
 
                   {/* Notification Content */}
@@ -73,7 +76,11 @@ const NotificationsPage = () => {
                     <p className="text-primary font-semibold text-lg">
                       {isLike
                         ? "You received a new like"
-                        : "You received a new comment"}
+                        : isComment
+                        ? "You received a new comment"
+                        : isBooked
+                        ? "You have been booked!"
+                        : "New notification"}
                     </p>
                     <p className="text-gray-600 text-sm mt-1">
                       {notif.message}

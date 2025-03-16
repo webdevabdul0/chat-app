@@ -358,10 +358,11 @@ const Post = ({ post }) => {
             ) : (
               <video
                 src={post.imageUrl}
-                controls
                 autoPlay
+                playsInline // Prevents full-screen behavior on mobile
+                controls
                 muted
-                className="w-full h-auto rounded-lg max-h-[500px]" // Set a max height
+                className="w-full h-auto rounded-lg max-h-[500px]"
               />
             )}
           </div>

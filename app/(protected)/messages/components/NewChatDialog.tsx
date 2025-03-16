@@ -5,8 +5,7 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Plus, User } from "lucide-react";
+import { User } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useChat } from "@/app/ChatProvider";
@@ -54,14 +53,19 @@ const NewChatDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-md p-6">
-        <DialogTitle>Select a User</DialogTitle>
-        <div className="flex flex-col gap-4">
+      <DialogContent className="max-w-md w-full max-h-[60vh] sm:max-h-[80vh] flex flex-col">
+        {/* Fixed Title & Close Button */}
+        <div className="p-4 border-b">
+          <DialogTitle>Select a User</DialogTitle>
+        </div>
+
+        {/* Scrollable User List */}
+        <div className="flex-1 w-full overflow-y-auto p-0">
           {users.map((user) => (
             <button
               key={user.id}
               onClick={() => startChat(user)}
-              className="flex items-center gap-3 p-3 hover:bg-primary/10 rounded-lg transition"
+              className="flex w-full items-center gap-3 p-3 hover:bg-primary/10 rounded-lg transition"
             >
               {user.profilePic ? (
                 <img

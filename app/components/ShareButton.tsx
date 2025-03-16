@@ -31,7 +31,11 @@ const ShareButton = ({ text, attachments }) => {
         const sort = { last_message_at: -1 };
         const userChannels = await client.queryChannels(filters, sort, {
           watch: true,
-          state: true,
+
+          state: false, // Don't fetch full state (less data)
+          limit: 20,
+          presence: false, // Don't track online status (reduces load)
+          fields: ["id", "name", "members"], // Fetch only needed fields
         });
 
         console.log("Fetched Channels:", userChannels); // Debugging

@@ -27,6 +27,8 @@ import ChatMember from "./components/ChatMember";
 import { Button } from "@/components/ui/button";
 import { Users } from "lucide-react"; // Import Group Icon
 
+import { MessageSimple } from "stream-chat-react";
+
 const CustomChannelPreview = ({
   channel,
   setActiveChannel,
@@ -220,7 +222,16 @@ const MessagesPage = () => {
                   setShowChatWindow={setShowChatWindow}
                 />
               </div>
-              <MessageList />
+              <MessageList
+                messageActions={[
+                  "react", // Allows users to react with emojis
+
+                  "quote", // Allows quoting a message in a reply
+                  "edit", // Lets users edit their own messages
+                  "delete", // Allows deleting messages
+                ]}
+              />
+
               <MessageInput />
             </Window>
           </Channel>

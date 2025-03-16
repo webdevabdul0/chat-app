@@ -18,6 +18,7 @@ import { Ghost, Settings, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RightPanel from "@/app/components/RightPanel";
 import SettingsPopup from "@/app/components/SettingsPopup";
+import BookingDialog from "../../messages/components/BookingDialog";
 
 interface User {
   id: string;
@@ -119,11 +120,13 @@ export default function ProfilePage() {
               </div>
 
               {currentUser && currentUser.uid !== user.id ? (
-                <div className="mt-4">
+                <div className="mt-4 flex gap-2">
                   <MessageButton
                     recipientId={user.id}
                     recipientName={user.fullName}
                   />
+
+                  <BookingDialog recipientId={user.id} />
                 </div>
               ) : (
                 <div className="mt-4">
