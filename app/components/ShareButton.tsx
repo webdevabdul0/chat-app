@@ -10,16 +10,21 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, Send } from "lucide-react";
+import { Check, Send, Copy, Share2 } from "lucide-react";
 
-const ShareButton = ({ text, attachments }) => {
+const ShareButton = ({ text, attachments, postId }) => {
   const { client } = useChatContext();
   const { user: currentUser } = useAuth();
   const [channels, setChannels] = useState([]);
-  const [selectedChannels, setSelectedChannels] = useState([]); // Toggle Selection
-  const [open, setOpen] = useState(false); // Control modal state
+  const [selectedChannels, setSelectedChannels] = useState([]);
+  const [open, setOpen] = useState(false);
 
-  // Fetch user's channels dynamically
+  // Construct the post link dynamically
+  const postLink =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/post/${postId}`
+      : "";
+
   useEffect(() => {
     const fetchChannels = async () => {
       if (!client?.userID) return;
@@ -31,15 +36,8 @@ const ShareButton = ({ text, attachments }) => {
         const sort = { last_message_at: -1 };
         const userChannels = await client.queryChannels(filters, sort, {
           watch: true,
-
-          state: false, // Don't fetch full state (less data)
-          limit: 20,
-          presence: false, // Don't track online status (reduces load)
-          fields: ["id", "name", "members"], // Fetch only needed fields
+          state: false,
         });
-
-        console.log("Fetched Channels:", userChannels); // Debugging
-
         setChannels(userChannels);
       } catch (error) {
         console.error("Error fetching channels:", error);
@@ -49,59 +47,105 @@ const ShareButton = ({ text, attachments }) => {
     fetchChannels();
   }, [client]);
 
-  // Get Display Name (Recipient Name for DMs, Group Name for Group Chats)
+  // Get recipient name correctly for one-on-one chats
   const getChannelDisplayName = (channel) => {
     if (!channel?.state) return "Unknown Chat";
 
     const members = Object.values(channel.state.members);
     const isGroupChat = members.length > 2;
-    if (isGroupChat) return channel.data?.name || `Group Chat (${channel.id})`;
 
+    if (isGroupChat) {
+      return channel.data?.name || `Group Chat (${channel.id})`;
+    }
+
+    // One-on-One Chat: Get recipient
     const recipient = members.find(
       (member) => member.user.id !== currentUser?.uid
     );
-    return recipient?.user?.name || `Chat with ${recipient?.user?.id}`;
+
+    if (!recipient) return "Unnamed Chat";
+
+    const recipientName =
+      recipient.user.name || recipient.user.username || recipient.user.id; // Fallback order
+    return `${recipientName} `;
   };
 
-  // Toggle Selection
+  // Toggle channel selection
   const toggleChannelSelection = (channel) => {
-    setSelectedChannels(
-      (prevSelected) =>
-        prevSelected.some((ch) => ch.id === channel.id)
-          ? prevSelected.filter((ch) => ch.id !== channel.id) // Remove if already selected
-          : [...prevSelected, channel] // Add if not selected
+    setSelectedChannels((prev) =>
+      prev.some((ch) => ch.id === channel.id)
+        ? prev.filter((ch) => ch.id !== channel.id)
+        : [...prev, channel]
     );
   };
 
-  // Send Message & Close Modal
+  // Handle sharing the post to selected chats
   const handleShare = async () => {
     if (!selectedChannels.length) return;
-
     await Promise.all(
       selectedChannels.map((channel) =>
-        channel.sendMessage({ text, attachments })
+        channel.sendMessage({
+          text: `Check out this post: ${postLink}`,
+          attachments,
+        })
       )
     );
+    setSelectedChannels([]);
+    setOpen(false);
+  };
 
-    setSelectedChannels([]); // Clear selection
-    setOpen(false); // Close modal
+  // Copy link to clipboard
+  const copyLink = async () => {
+    await navigator.clipboard.writeText(postLink);
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {/* Trigger Icon Button */}
       <DialogTrigger asChild>
         <Send className="w-6 h-6 cursor-pointer" />
       </DialogTrigger>
 
-      {/* Modal Content */}
-      <DialogContent className="w-[400px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Share to Chats</DialogTitle>
+          <DialogTitle>Share Post</DialogTitle>
         </DialogHeader>
 
-        {/* List of Channels (Scrollable) */}
-        <ScrollArea className="max-h-[300px] space-y-2">
+        <p className="text-gray-600">Share this post link:</p>
+        <div className="flex items-center space-x-2 mt-2 w-full">
+          <Button
+            variant="outline"
+            onClick={copyLink}
+            className="px-3 py-1 text-sm"
+          >
+            <Copy className="w-4 h-4 mr-1" /> Copy
+          </Button>
+          <a
+            href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+              postLink
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex"
+          >
+            <Button variant="outline" className="px-3 py-1 text-sm">
+              <Share2 className="w-4 h-4 mr-1" /> WhatsApp
+            </Button>
+          </a>
+          <a
+            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+              postLink
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex"
+          >
+            <Button variant="outline" className="px-3 py-1 text-sm">
+              <Share2 className="w-4 h-4 mr-1" /> Facebook
+            </Button>
+          </a>
+        </div>
+
+        <ScrollArea className="max-h-[300px] space-y-2 mt-4">
           {channels.length > 0 ? (
             channels.map((channel) => {
               const isSelected = selectedChannels.some(
@@ -111,8 +155,9 @@ const ShareButton = ({ text, attachments }) => {
                 <div
                   key={channel.id}
                   onClick={() => toggleChannelSelection(channel)}
-                  className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition
-                    ${isSelected ? "bg-primary/10" : "hover:bg-gray-100"}`}
+                  className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition ${
+                    isSelected ? "bg-primary/10" : "hover:bg-gray-100"
+                  }`}
                 >
                   <span>{getChannelDisplayName(channel)}</span>
                   {isSelected && <Check className="w-6 h-6 text-primary" />}
@@ -124,13 +169,12 @@ const ShareButton = ({ text, attachments }) => {
           )}
         </ScrollArea>
 
-        {/* Share Button */}
         <Button
           onClick={handleShare}
           className="w-full mt-3"
           disabled={!selectedChannels.length}
         >
-          Share
+          Share to Chats
         </Button>
       </DialogContent>
     </Dialog>

@@ -14,6 +14,7 @@ import {
   X,
   User,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Sidebar({ isFixed }: { isFixed: boolean }) {
   const { userData, logout } = useAuth();
@@ -21,12 +22,6 @@ export default function Sidebar({ isFixed }: { isFixed: boolean }) {
   const pathname = usePathname();
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const links = [
-    { href: "/home", label: "Home", icon: Home },
-    { href: "/notifications", label: "Notifications", icon: Bell },
-    { href: "/messages", label: "Messages", icon: MessageSquare },
-  ];
 
   return (
     <>
@@ -56,100 +51,112 @@ export default function Sidebar({ isFixed }: { isFixed: boolean }) {
           <X className="w-6 h-6 text-black" />
         </button>
 
-        {userData && (
-          <div className="bg-white px-2 py-2 border border-gray-200 rounded-xl shadow-sm flex items-center space-x-3 mb-6">
-            <Avatar className="w-12 h-12">
-              {userData.profilePic ? (
-                <AvatarImage src={userData.profilePic} alt="User Avatar" />
-              ) : (
-                <AvatarFallback className="bg-primary text-white">
-                  {userData.fullName.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              )}
-            </Avatar>
-            <div>
-              <p className="text-black font-semibold text-base">
-                {userData.fullName}
-              </p>
-            </div>
+        {/* If user is NOT authenticated, show only login button */}
+        {!user ? (
+          <div className="flex flex-col items-center justify-center h-full">
+            <Link href="/auth/login">
+              <Button>Login</Button>
+            </Link>
           </div>
-        )}
+        ) : (
+          <>
+            {/* User Info */}
+            <div className="bg-white px-2 py-2 border border-gray-200 rounded-xl shadow-sm flex items-center space-x-3 mb-6">
+              <Avatar className="w-12 h-12">
+                {userData?.profilePic ? (
+                  <AvatarImage src={userData.profilePic} alt="User Avatar" />
+                ) : (
+                  <AvatarFallback className="bg-primary text-white">
+                    {userData?.fullName?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              <div>
+                <p className="text-black font-semibold text-base">
+                  {userData?.fullName}
+                </p>
+              </div>
+            </div>
 
-        <nav className="flex flex-col text-black/60 gap-3">
-          {links.map(({ href, label, icon: Icon }) => {
-            const isSelected = pathname === href;
-            return (
+            {/* Sidebar Links */}
+            <nav className="flex flex-col text-black/60 gap-3">
+              {[
+                { href: "/home", label: "Home", icon: Home },
+                { href: "/notifications", label: "Notifications", icon: Bell },
+                { href: "/messages", label: "Messages", icon: MessageSquare },
+              ].map(({ href, label, icon: Icon }) => {
+                const isSelected = pathname === href;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={`flex items-center gap-3 p-3 rounded-xl text-base font-medium transition border 
+                      ${
+                        isSelected
+                          ? "bg-primary/10 border-primary text-primary"
+                          : "border-transparent text-black/40 hover:bg-primary/10"
+                      }`}
+                  >
+                    <Icon
+                      className={`w-6 h-6 ${
+                        isSelected ? "text-primary" : "text-black/40"
+                      }`}
+                    />
+                    {label}
+                  </Link>
+                );
+              })}
+
+              {/* Profile Link */}
               <Link
-                key={href}
-                href={href}
-                onClick={() => setIsSidebarOpen(false)} // Close sidebar on click
+                href={`/profile/${user?.uid}`}
+                onClick={() => setIsSidebarOpen(false)}
                 className={`flex items-center gap-3 p-3 rounded-xl text-base font-medium transition border 
-                ${
-                  isSelected
-                    ? "bg-primary/10 border-primary text-primary"
-                    : "border-transparent text-black/40 hover:bg-primary/10"
-                }`}
+                  ${
+                    pathname === `/profile/${user?.uid}`
+                      ? "bg-primary/10 border-primary text-primary"
+                      : "border-transparent text-black/40 hover:bg-primary/10"
+                  }`}
               >
-                <Icon
+                <User
                   className={`w-6 h-6 ${
-                    isSelected ? "text-primary" : "text-black/40"
+                    pathname === `/profile/${user?.uid}`
+                      ? "text-primary"
+                      : "text-black/40"
                   }`}
                 />
-                {label}
+                Profile
               </Link>
-            );
-          })}
 
-          {/* Profile Link */}
-          {userData && (
-            <Link
-              href={`/profile/${user.uid}`}
-              onClick={() => setIsSidebarOpen(false)}
-              className={`flex items-center gap-3 p-3 rounded-xl text-base font-medium transition border 
-              ${
-                pathname === `/profile/${user.uid}`
-                  ? "bg-primary/10 border-primary text-primary"
-                  : "border-transparent text-black/40 hover:bg-primary/10"
-              }`}
-            >
-              <User
-                className={`w-6 h-6 ${
-                  pathname === `/profile/${user.uid}`
-                    ? "text-primary"
-                    : "text-black/40"
-                }`}
-              />
-              Profile
-            </Link>
-          )}
+              {/* Settings Button */}
+              <button
+                onClick={() => {
+                  setIsPopupOpen(true);
+                  setIsSidebarOpen(false);
+                }}
+                className="flex items-center gap-3 p-3 rounded-xl text-base font-medium transition border border-transparent text-black/40 hover:bg-primary/10"
+              >
+                <Settings className="w-6 h-6 text-black/40" />
+                Settings
+              </button>
+            </nav>
 
-          {/* Settings Button */}
-          <button
-            onClick={() => {
-              setIsPopupOpen(true);
-              setIsSidebarOpen(false); // Close sidebar on mobile
-            }}
-            className="flex items-center gap-3 p-3 rounded-xl text-base font-medium transition border border-transparent text-black/40 hover:bg-primary/10"
-          >
-            <Settings className="w-6 h-6 text-black/40" />
-            Settings
-          </button>
-        </nav>
-
-        <div className="mt-auto">
-          {userData && (
-            <button
-              onClick={logout}
-              className="w-full p-3 flex items-center justify-center gap-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
-            >
-              Logout
-              <LogOut className="w-6 h-6 text-white" />
-            </button>
-          )}
-        </div>
+            {/* Logout Button */}
+            <div className="mt-auto">
+              <button
+                onClick={logout}
+                className="w-full p-3 flex items-center justify-center gap-2 bg-red-500 text-white rounded-xl hover:bg-red-600"
+              >
+                Logout
+                <LogOut className="w-6 h-6 text-white" />
+              </button>
+            </div>
+          </>
+        )}
       </aside>
 
-      {/* Show the Popup when isPopupOpen is true */}
+      {/* Settings Popup */}
       {isPopupOpen && <SettingsPopup onClose={() => setIsPopupOpen(false)} />}
     </>
   );

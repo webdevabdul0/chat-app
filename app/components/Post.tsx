@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from "react";
 import {
   doc,
@@ -425,7 +426,7 @@ const Post = ({ post }) => {
         </Dialog>
 
         <ShareButton
-          text={`📢Shared a post with you by ${
+          text={`📢 Shared a post with you by ${
             postOwner?.fullName || "someone"
           }: "${post.caption}"`}
           attachments={
@@ -440,6 +441,7 @@ const Post = ({ post }) => {
                 ]
               : []
           }
+          postId={post.id} // 🔥 Add this!
         />
       </div>
 
