@@ -10,6 +10,16 @@ import {
   RecaptchaVerifier,
 } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
+import { sendPasswordResetEmail } from "firebase/auth";
+
+export const resetPassword = async (email: string) => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+};
 
 /**
  * Signup with Email & Password

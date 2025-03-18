@@ -4,7 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/app/provider";
-import { login, loginWithPhone, verifyOTPForLogin } from "@/lib/auth";
+import { Eye, EyeOff } from "lucide-react";
+
+import {
+  login,
+  loginWithPhone,
+  resetPassword,
+  verifyOTPForLogin,
+} from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +20,32 @@ import Image from "next/image";
 import auth from "@/public/auth.png";
 
 export default function LoginPage() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
+
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail) {
+      setResetMessage("Please enter a valid email.");
+      return;
+    }
+
+    setResetMessage(null);
+    setLoading(true);
+
+    const res = await resetPassword(forgotPasswordEmail);
+    setLoading(false);
+
+    if (res.success) {
+      setResetMessage("Password reset email sent! Check your inbox.");
+    } else {
+      setResetMessage(res.error);
+    }
+  };
+
+  ////////////////////////////////////////////////////////////////////////
+
   const [form, setForm] = useState({ identifier: "", password: "" });
   const [otp, setOtp] = useState("");
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
@@ -121,17 +154,25 @@ export default function LoginPage() {
                 )}
 
                 {/\S+@\S+\.\S+/.test(form.identifier) ? (
-                  <div>
+                  <div className="relative">
                     <Label htmlFor="password">Password</Label>
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       name="password"
                       placeholder="Enter Password"
                       value={form.password}
                       onChange={handleChange}
                       required
+                      className="pr-10" // Add padding for the icon
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-10 text-gray-500"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
                   </div>
                 ) : confirmationResult ? (
                   <div>
@@ -169,9 +210,13 @@ export default function LoginPage() {
                   )}
 
                   <p className="text-sm mt-4 text-start font-semibold">
-                    <Link href="/" className="text-black/40">
+                    <button
+                      type="button"
+                      onClick={() => setIsForgotPasswordOpen(true)}
+                      className="text-black/40"
+                    >
                       Forgot Password?
-                    </Link>
+                    </button>
                   </p>
                 </div>
               </form>
@@ -203,6 +248,46 @@ export default function LoginPage() {
         </div>
       </div>
       <div id="recaptcha-container"></div>
+
+      {isForgotPasswordOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h2 className="text-xl font-bold text-center mb-4">
+              Reset Password
+            </h2>
+
+            {resetMessage && (
+              <p className="text-sm text-center text-red-500 mb-2">
+                {resetMessage}
+              </p>
+            )}
+
+            <Input
+              type="email"
+              placeholder="Enter your email"
+              value={forgotPasswordEmail}
+              onChange={(e) => setForgotPasswordEmail(e.target.value)}
+              className="w-full mb-4"
+            />
+
+            <Button
+              onClick={handleForgotPassword}
+              disabled={loading}
+              className="w-full py-2"
+            >
+              {loading ? "Sending..." : "Send Reset Email"}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => setIsForgotPasswordOpen(false)}
+              className="w-full mt-2"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

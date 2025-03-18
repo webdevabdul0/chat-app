@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import auth from "@/public/auth.png";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function SignupPage() {
   const [form, setForm] = useState({
@@ -27,6 +28,8 @@ export default function SignupPage() {
   const router = useRouter();
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
   const [otp, setOtp] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -173,29 +176,56 @@ export default function SignupPage() {
 
                 {/\S+@\S+\.\S+/.test(form.identifier) ? (
                   <>
-                    <div>
+                    <div className="relative">
                       <Label htmlFor="password">Password</Label>
                       <Input
                         id="password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         name="password"
                         placeholder="Enter Password"
                         value={form.password}
                         onChange={handleChange}
                         required
+                        className="pr-10"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-10 text-gray-500"
+                      >
+                        {showPassword ? (
+                          <EyeOff size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
                     </div>
-                    <div>
+
+                    <div className="relative mt-4">
                       <Label htmlFor="confirmPassword">Confirm Password</Label>
                       <Input
                         id="confirmPassword"
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         name="confirmPassword"
                         placeholder="Confirm Password"
                         value={form.confirmPassword}
                         onChange={handleChange}
                         required
+                        className="pr-10"
                       />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                        className="absolute right-3 top-10 text-gray-500"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff size={20} />
+                        ) : (
+                          <Eye size={20} />
+                        )}
+                      </button>
                     </div>
                   </>
                 ) : confirmationResult ? (
