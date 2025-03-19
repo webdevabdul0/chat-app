@@ -113,37 +113,43 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              <div className=" flex sm:hidden">
+              <div className="flex sm:hidden">
                 <p className="text-base font-semibold text-black">
                   {user.description}
                 </p>
               </div>
 
-              {currentUser && currentUser.uid !== user.id ? (
-                <div className="mt-4 flex gap-2">
-                  <MessageButton
-                    recipientId={user.id}
-                    recipientName={user.fullName}
-                  />
+              <div className="mt-4 flex gap-2">
+                {currentUser && currentUser.uid !== user.id ? (
+                  <>
+                    {/* Show message button only for other users */}
+                    <MessageButton
+                      recipientId={user.id}
+                      recipientName={user.fullName}
+                    />
+                    <BookingDialog recipientId={user.id} />
+                  </>
+                ) : (
+                  <>
+                    {/* Show Edit Profile for self */}
+                    <button
+                      onClick={() => setIsPopupOpen(true)}
+                      className="flex items-center gap-3 px-3 py-2 rounded-xl text-base font-medium transition border border-transparent 
+              text-black/40 bg-primary text-white hover:bg-primary/90"
+                    >
+                      <User className="w-6 h-6" />
+                      Edit Profile
+                    </button>
 
-                  <BookingDialog recipientId={user.id} />
-                </div>
-              ) : (
-                <div className="mt-4">
-                  <button
-                    onClick={() => setIsPopupOpen(true)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-base font-medium transition border border-transparent 
-      text-black/40 bg-primary text-white hover:bg-primary/90"
-                  >
-                    <User className="w-6 h-6" />
-                    Edit Profile
-                  </button>
+                    {isPopupOpen && (
+                      <SettingsPopup onClose={() => setIsPopupOpen(false)} />
+                    )}
 
-                  {isPopupOpen && (
-                    <SettingsPopup onClose={() => setIsPopupOpen(false)} />
-                  )}
-                </div>
-              )}
+                    {/* Booking dialog for self */}
+                    <BookingDialog recipientId={user.id} />
+                  </>
+                )}
+              </div>
             </div>
           </div>
         ) : (

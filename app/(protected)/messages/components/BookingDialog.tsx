@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import {
-  doc,
-  getDoc,
-  setDoc,
+  collection,
+  addDoc,
+  getDocs,
   deleteDoc,
   serverTimestamp,
   Timestamp,
-  collection,
+  query,
+  where,
+  doc,
 } from "firebase/firestore";
 import {
   Dialog,
@@ -23,7 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from "@/app/provider";
 import { toast } from "react-hot-toast";
-import { Book, Eye, Trash2 } from "lucide-react";
+import { Book, Eye, Trash2, Plus } from "lucide-react";
 
 export default function BookingDialog({
   recipientId,
@@ -35,45 +37,34 @@ export default function BookingDialog({
   const [date, setDate] = useState<Date | null>(null);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [isBooked, setIsBooked] = useState(false);
-  const [bookingDetails, setBookingDetails] = useState<any>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
 
+  // Fetch all bookings for this recipient
   useEffect(() => {
-    const checkBooking = async () => {
+    const fetchBookings = async () => {
       if (!currentUser) return;
-
       try {
-        const bookingRef = doc(
-          db,
-          "bookings",
-          `${currentUser.uid}_${recipientId}`
+        const bookingsRef = collection(db, "bookings");
+        const q = query(
+          bookingsRef,
+          where("bookedBy", "==", currentUser.uid),
+          where("bookedUser", "==", recipientId)
         );
-        console.log("Checking booking for:", bookingRef.path);
-
-        const bookingSnap = await getDoc(bookingRef);
-
-        if (bookingSnap.exists()) {
-          const data = bookingSnap.data();
-          console.log("Booking Data:", data);
-
-          setIsBooked(true);
-          setBookingDetails({
-            ...data,
-            date: data.date?.seconds
-              ? new Date(data.date.seconds * 1000)
-              : null, // ✅ Convert Firestore Timestamp
-          });
-        } else {
-          console.log("No booking found.");
-          setIsBooked(false);
-          setBookingDetails(null);
-        }
+        const querySnapshot = await getDocs(q);
+        const fetchedBookings = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+          date: doc.data().date?.seconds
+            ? new Date(doc.data().date.seconds * 1000)
+            : null,
+        }));
+        setBookings(fetchedBookings);
       } catch (error) {
-        console.error("Error fetching booking:", error);
+        console.error("Error fetching bookings:", error);
       }
     };
 
-    checkBooking();
+    fetchBookings();
   }, [currentUser, recipientId]);
 
   const handleBooking = async () => {
@@ -84,12 +75,7 @@ export default function BookingDialog({
 
     try {
       setLoading(true);
-      const bookingRef = doc(
-        db,
-        "bookings",
-        `${currentUser.uid}_${recipientId}`
-      );
-      await setDoc(bookingRef, {
+      await addDoc(collection(db, "bookings"), {
         bookedBy: currentUser.uid,
         bookedUser: recipientId,
         jobTitle,
@@ -97,19 +83,23 @@ export default function BookingDialog({
         createdAt: serverTimestamp(),
       });
 
-      // ✅ Send notification to the booked user
-      const notificationRef = doc(collection(db, "notifications"));
-      await setDoc(notificationRef, {
-        userId: recipientId, // The booked user should receive this
+      // Send notification
+      await addDoc(collection(db, "notifications"), {
+        userId: recipientId,
         message: `You have been booked for "${jobTitle}" on ${date.toDateString()}`,
         createdAt: serverTimestamp(),
-        type: "booking", // Optional: Can help filter notifications later
+        type: "booking",
       });
 
-      toast.success("Booking successful!");
-      setIsBooked(true);
-      setBookingDetails({ jobTitle, date });
-      setIsOpen(false);
+      toast.success("Booking added!");
+      setJobTitle("");
+      setDate(null);
+
+      // Refresh bookings
+      setBookings((prev) => [
+        ...prev,
+        { jobTitle, date, id: Math.random().toString() }, // Temporary ID until refresh
+      ]);
     } catch (error) {
       console.error("Error booking user:", error);
       toast.error("Failed to book. Try again.");
@@ -118,20 +108,11 @@ export default function BookingDialog({
     }
   };
 
-  const handleDeleteBooking = async () => {
-    if (!currentUser) return;
-
+  const handleDeleteBooking = async (bookingId: string) => {
     try {
-      const bookingRef = doc(
-        db,
-        "bookings",
-        `${currentUser.uid}_${recipientId}`
-      );
-      await deleteDoc(bookingRef);
-
+      await deleteDoc(doc(db, "bookings", bookingId));
       toast.success("Booking deleted!");
-      setIsBooked(false);
-      setBookingDetails(null);
+      setBookings((prev) => prev.filter((b) => b.id !== bookingId));
     } catch (error) {
       console.error("Error deleting booking:", error);
       toast.error("Failed to delete booking. Try again.");
@@ -140,8 +121,7 @@ export default function BookingDialog({
 
   return (
     <>
-      {isBooked ? (
-        // If already booked, show "View Booking" button
+      {bookings.length > 0 ? (
         <Dialog>
           <DialogTrigger asChild>
             <Button
@@ -156,29 +136,71 @@ export default function BookingDialog({
               <DialogTitle>Booking Details</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              <p>
-                <span className="font-semibold">Job Title:</span>{" "}
-                {bookingDetails?.jobTitle}
-              </p>
-              <p>
-                <span className="font-semibold">Date:</span>{" "}
-                {bookingDetails?.date
-                  ? bookingDetails.date.toDateString()
-                  : "No date found"}
-              </p>
-              <Button
-                onClick={handleDeleteBooking}
-                variant="destructive"
-                className="flex items-center gap-3 p-3 sm:p-6 rounded-2xl text-base font-medium transition"
-              >
-                <Trash2 size={24} /> Delete Booking
-              </Button>
+              {bookings.map((booking) => (
+                <div
+                  key={booking.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-semibold">{booking.jobTitle}</p>
+                    <p className="text-sm">
+                      {booking.date ? booking.date.toDateString() : "No date"}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => handleDeleteBooking(booking.id)}
+                    variant="destructive"
+                    size="icon"
+                  >
+                    <Trash2 size={20} />
+                  </Button>
+                </div>
+              ))}
+              {/* Add Booking Button Inside the Dialog */}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-3 w-full">
+                    <Plus size={20} /> Add New Booking
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Book This User</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Input
+                      placeholder="Job Title / Description"
+                      value={jobTitle}
+                      onChange={(e) => setJobTitle(e.target.value)}
+                    />
+                    <div>
+                      <p className="text-sm font-semibold">
+                        Select the booking date
+                      </p>
+                      <div className="flex justify-center">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleBooking}
+                      disabled={loading}
+                      className="w-full"
+                    >
+                      {loading ? "Booking..." : "Confirm Booking"}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </DialogContent>
         </Dialog>
       ) : (
-        // If not booked, show "Book" button
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog>
           <DialogTrigger asChild>
             <Button
               variant="outline"

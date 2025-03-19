@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import SettingsPopup from "./SettingsPopup";
+
 import {
   Home,
   Bell,
@@ -13,6 +14,7 @@ import {
   Menu,
   X,
   User,
+  Book,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -84,6 +86,7 @@ export default function Sidebar({ isFixed }: { isFixed: boolean }) {
                 { href: "/home", label: "Home", icon: Home },
                 { href: "/notifications", label: "Notifications", icon: Bell },
                 { href: "/messages", label: "Messages", icon: MessageSquare },
+                { href: "/my-booking", label: "Booking", icon: Book },
               ].map(({ href, label, icon: Icon }) => {
                 const isSelected = pathname === href;
                 return (
