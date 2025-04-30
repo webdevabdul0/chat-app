@@ -10,16 +10,18 @@ import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ImageIcon, VideoIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { ImageIcon, VideoIcon, PencilIcon, Trash2Icon, MusicIcon } from "lucide-react";
+
+type MediaFile = File | null;
 
 export default function PostInput() {
   const [text, setText] = useState("");
-  const [media, setMedia] = useState(null);
+  const [media, setMedia] = useState<MediaFile>(null);
   const [mediaUrl, setMediaUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
 
-  const handleMediaChange = (e) => {
+  const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) setMedia(file);
   };
@@ -42,7 +44,7 @@ export default function PostInput() {
         const uploadTask = uploadBytesResumable(mediaRef, media);
 
         // Wait for the upload to finish
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           uploadTask.on(
             "state_changed",
             null,
@@ -63,6 +65,8 @@ export default function PostInput() {
         mediaType: media
           ? media.type.startsWith("video")
             ? "video"
+            : media.type.startsWith("audio")
+            ? "audio"
             : "image"
           : null,
         createdAt: serverTimestamp(),
@@ -98,11 +102,18 @@ export default function PostInput() {
               alt="Preview"
               className="w-full h-full object-cover rounded-lg"
             />
-          ) : (
+          ) : media.type.startsWith("video") ? (
             <video controls className="w-full h-48 rounded-lg">
               <source src={URL.createObjectURL(media)} type={media.type} />
             </video>
-          )}
+          ) : media.type.startsWith("audio") ? (
+            <div className="w-full p-4 bg-gray-100 rounded-lg">
+              <audio controls className="w-full">
+                <source src={URL.createObjectURL(media)} type={media.type} />
+                Your browser does not support the audio element.
+              </audio>
+            </div>
+          ) : null}
 
           {/* Edit & Remove Media Icons */}
           <div className="absolute top-2 right-2 flex space-x-4 bg-black bg-opacity-50 p-2 rounded-lg">
@@ -150,6 +161,18 @@ export default function PostInput() {
             id="video-upload"
             type="file"
             accept="video/*"
+            className="hidden"
+            onChange={handleMediaChange}
+          />
+
+          {/* Music Upload */}
+          <Label htmlFor="music-upload">
+            <MusicIcon className="w-6 h-6 cursor-pointer hover:text-purple-500" />
+          </Label>
+          <Input
+            id="music-upload"
+            type="file"
+            accept="audio/*"
             className="hidden"
             onChange={handleMediaChange}
           />

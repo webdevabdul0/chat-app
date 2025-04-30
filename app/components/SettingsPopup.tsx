@@ -297,7 +297,7 @@ const SettingsPopup = ({ onClose }) => {
         </div>
 
         {/* Profile Information */}
-        <div>
+        <div className="space-y-4">
           <Label htmlFor="email">Email</Label>
           <Input id="email" type="email" value={form.email} disabled />
 
@@ -355,116 +355,120 @@ const SettingsPopup = ({ onClose }) => {
         </div>
 
         {/* Account Actions */}
-        {/* Logout & Delete Account Group */}
-        <div className="flex justify-between mt-6">
-          {/* Logout */}
-          <AlertDialog
-            open={openDialog === "logout"}
-            onOpenChange={(isOpen) => setOpenDialog(isOpen ? "logout" : null)}
-          >
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="destructive"
-                disabled={loading}
-                onClick={() => setOpenDialog("logout")}
-              >
-                Logout
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will log you out of your account.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setOpenDialog(null)}>
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-red-500 text-white"
-                  onClick={() => handleAction(handleLogout)}
+        <div className="mt-6 space-y-4">
+          {/* Logout & Delete Account Group */}
+          <div className="flex flex-row justify-between">
+            {/* Logout */}
+            <AlertDialog
+              open={openDialog === "logout"}
+              onOpenChange={(isOpen) => setOpenDialog(isOpen ? "logout" : null)}
+            >
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  disabled={loading}
+                  onClick={() => setOpenDialog("logout")}
+                  className="w-32"
                 >
-                  Yes, Logout
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  Logout
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="z-[70]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will log you out of your account.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setOpenDialog(null)}>
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-500 text-white hover:bg-red-600"
+                    onClick={() => handleAction(handleLogout)}
+                  >
+                    Yes, Logout
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
-          {/* Delete Account */}
-          <AlertDialog
-            open={openDialog === "deleteAccount"}
-            onOpenChange={(isOpen) =>
-              setOpenDialog(isOpen ? "deleteAccount" : null)
-            }
-          >
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="destructive"
-                disabled={loading}
-                onClick={() => setOpenDialog("deleteAccount")}
-              >
-                Delete Account
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action is permanent and cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setOpenDialog(null)}>
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-red-500 text-white"
-                  onClick={() => handleAction(handleDeleteAccount)}
+            {/* Delete Account */}
+            <AlertDialog
+              open={openDialog === "deleteAccount"}
+              onOpenChange={(isOpen) =>
+                setOpenDialog(isOpen ? "deleteAccount" : null)
+              }
+            >
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  disabled={loading}
+                  onClick={() => setOpenDialog("deleteAccount")}
+                  className="w-36"
                 >
-                  Yes, Delete Account
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+                  Delete Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="z-[70]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action is permanent and cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setOpenDialog(null)}>
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-500 text-white hover:bg-red-600"
+                    onClick={() => handleAction(handleDeleteAccount)}
+                  >
+                    Yes, Delete Account
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
 
-        {/* Save & Discard Changes Group */}
-        <div className="flex justify-end mt-6">
-          {/* Discard Changes */}
-          <AlertDialog
-            open={openDialog === "discard"}
-            onOpenChange={(isOpen) => setOpenDialog(isOpen ? "discard" : null)}
-          >
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="outline"
-                onClick={() => setOpenDialog("discard")}
-              >
-                Discard Changes
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Discard changes?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Any unsaved changes will be lost.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setOpenDialog(null)}>
-                  Cancel
-                </AlertDialogCancel>
-                <AlertDialogAction onClick={onClose}>Discard</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {/* Save & Discard Changes Group */}
+          <div className="flex justify-end gap-2">
+            {/* Discard Changes */}
+            <AlertDialog
+              open={openDialog === "discard"}
+              onOpenChange={(isOpen) => setOpenDialog(isOpen ? "discard" : null)}
+            >
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  onClick={() => setOpenDialog("discard")}
+                >
+                  Discard Changes
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="z-[70]">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Any unsaved changes will be lost.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setOpenDialog(null)}>
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction onClick={onClose}>Discard</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
-          {/* Save Changes */}
-          <Button className="ml-2" onClick={handleSave} disabled={loading}>
-            {loading ? "Saving..." : "Save Changes"}
-          </Button>
+            {/* Save Changes */}
+            <Button className="ml-2" onClick={handleSave} disabled={loading}>
+              {loading ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

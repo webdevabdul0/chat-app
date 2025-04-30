@@ -60,7 +60,33 @@ import { X } from "lucide-react";
 import EditPost from "./EditPostPopup";
 import ShareButton from "./ShareButton";
 
-const Post = ({ post }) => {
+interface Post {
+  id: string;
+  userId: string;
+  caption: string;
+  imageUrl: string;
+  mediaType: "image" | "video" | "audio" | null;
+  createdAt: any;
+  likes?: string[];
+}
+
+interface PostOwner {
+  username: string;
+  profilePic?: string;
+  fullName: string;
+}
+
+interface Comment {
+  id: string;
+  user?: {
+    username?: string;
+    fullName?: string;
+    profilePic?: string;
+  };
+  text: string;
+}
+
+const Post = ({ post }: { post: Post }) => {
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
 
@@ -68,11 +94,7 @@ const Post = ({ post }) => {
   const [toastOpen, setToastOpen] = useState(false);
   const [open, setOpen] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
-  const [postOwner, setPostOwner] = useState<{
-    username: string;
-    profilePic?: string;
-    fullName: string;
-  } | null>(null);
+  const [postOwner, setPostOwner] = useState<PostOwner | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -81,7 +103,7 @@ const Post = ({ post }) => {
   const closeEditModal = () => setIsEditOpen(false);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [comments, setComments] = useState([]);
+  const [comments, setComments] = useState<Comment[]>([]);
 
   useEffect(() => {
     const likesRef = collection(db, "posts", post.id, "likes");
@@ -101,7 +123,12 @@ const Post = ({ post }) => {
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
-          setPostOwner(userSnap.data());
+          const userData = userSnap.data();
+          setPostOwner({
+            username: userData.username || "",
+            profilePic: userData.profilePic,
+            fullName: userData.fullName || "",
+          });
         }
       }
     };
@@ -112,23 +139,12 @@ const Post = ({ post }) => {
   // 🔥 FIX: Fetch Comments in Real-Time Using onSnapshot
   useEffect(() => {
     const commentsRef = collection(db, "posts", post.id, "comments");
-    const q = query(commentsRef, orderBy("createdAt", "desc"));
-
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const commentsData = await Promise.all(
-        snapshot.docs.map(async (commentDoc) => {
-          const commentData = commentDoc.data();
-          const userRef = doc(db, "users", commentData.userId);
-          const userSnap = await getDoc(userRef);
-
-          return {
-            id: commentDoc.id,
-            ...commentData,
-            user: userSnap.exists() ? userSnap.data() : null,
-          };
-        })
-      );
-
+    const unsubscribe = onSnapshot(commentsRef, (snapshot) => {
+      const commentsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        text: doc.data().text || "",
+        user: doc.data().user || null,
+      }));
       setComments(commentsData);
     });
 
@@ -193,28 +209,17 @@ const Post = ({ post }) => {
       return;
     }
 
-    console.log("Post object before deletion:", post); // Debugging log
-
     try {
-      // 🔥 Delete image first if it exists
       if (post.imageUrl) {
-        console.log("Deleting image from storage:", post.imageUrl);
         await deleteObject(ref(storage, post.imageUrl));
-        console.log("Image deleted successfully");
-      } else {
-        console.log("No image found for this post.");
       }
 
-      // 🗑️ Now delete the post document from Firestore
       await deleteDoc(doc(db, "posts", post.id));
-      console.log("Post deleted from Firestore");
-
-      // ✅ Success notification
       toast.success("Post deleted successfully!");
       setToastOpen(false);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error deleting post:", error);
-      toast.error(`Error deleting post: ${error.message}`);
+      toast.error(`Error deleting post: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -340,7 +345,7 @@ const Post = ({ post }) => {
         {post.caption}
       </p>
 
-      {post.imageUrl && post.imageUrl.trim() !== "" && (
+      {post.imageUrl && (
         <>
           <div
             className="w-full relative overflow-hidden cursor-pointer"
@@ -356,16 +361,23 @@ const Post = ({ post }) => {
                 height={500}
                 className="w-full h-auto rounded-lg"
               />
-            ) : (
+            ) : post.mediaType === "video" ? (
               <video
                 src={post.imageUrl}
                 autoPlay
-                playsInline // Prevents full-screen behavior on mobile
+                playsInline
                 controls
                 muted
                 className="w-full h-auto rounded-lg max-h-[500px]"
               />
-            )}
+            ) : post.mediaType === "audio" ? (
+              <div className="w-full p-4 bg-gray-100 rounded-lg">
+                <audio controls className="w-full">
+                  <source src={post.imageUrl} type="audio/mpeg" />
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            ) : null}
           </div>
 
           {/* Image Preview with Backdrop */}
