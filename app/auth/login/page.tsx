@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
-import auth from "@/public/auth.png";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -118,7 +117,7 @@ export default function LoginPage() {
       <div className="max-w-7xl flex flex-row items-center justify-between p-4 h-full">
         <div className="w-1/2 h-full hidden lg:flex">
           <Image
-            src={auth}
+            src="/auth.png"
             alt="auth-Img"
             className="object-cover object-left h-full rounded-2xl"
           />
