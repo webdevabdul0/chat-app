@@ -50,7 +50,7 @@ export default function PostPage() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col items-center p-6 ">
-        <Image src="/logo.png" alt="logo" width={120} height={120} />
+        <Image src="/logo.png" alt="logo" width={140} height={140} />
 
         {/* Post Section */}
         <div className="max-w-2xl w-full mt-10">

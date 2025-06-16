@@ -38,7 +38,7 @@ const NotificationsPage = () => {
   return (
     <div className="flex flex-col items-center py-10 px-4 max-w-2xl mx-auto">
       {/* Logo */}
-      <Image src="/logo.png" alt="iHere Logo" width={120} height={120} />
+      <Image src="/logo.png" alt="GoGreek Logo" width={140} height={140} />
 
       <div className="my-5 flex flex-col justify-start items-start w-full">
         {/* Header */}

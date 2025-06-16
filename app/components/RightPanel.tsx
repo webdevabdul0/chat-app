@@ -1,43 +1,62 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import UserCard from "./UserCard";
 import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
 
+// Add User type for state
+interface User {
+  id: string;
+  fullName: string;
+  username: string;
+  profilePic?: string;
+}
+
 export default function RightPanel() {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch users
+  // Fetch users with debounce
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        let q = query(collection(db, "users"), orderBy("fullName"));
-        const querySnapshot = await getDocs(q);
-        let usersData = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      const fetchUsers = async () => {
+        try {
+          let q = query(collection(db, "users"), orderBy("fullName"));
+          const querySnapshot = await getDocs(q);
+          let usersData = querySnapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              fullName: data.fullName || '',
+              username: data.username || '',
+              profilePic: data.profilePic || undefined,
+            };
+          });
 
-        if (search.trim()) {
-          usersData = usersData.filter(
-            (user) =>
-              user.fullName.toLowerCase().includes(search.toLowerCase()) ||
-              user.username.toLowerCase().includes(search.toLowerCase())
-          );
+          if (search.trim()) {
+            usersData = usersData.filter(
+              (user) =>
+                user.fullName.toLowerCase().includes(search.toLowerCase()) ||
+                user.username.toLowerCase().includes(search.toLowerCase())
+            );
+          }
+
+          setUsers(usersData.slice(0, 3));
+        } catch (error) {
+          console.error("Error fetching users:", error);
         }
-
-        setUsers(usersData.slice(0, 3));
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
+      };
+      fetchUsers();
+    }, 400); // 400ms debounce
+    return () => {
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
     };
-
-    fetchUsers();
   }, [search]);
 
   return (

@@ -27,7 +27,7 @@
 
     --popover-foreground: 0 0% 3.9%;
 
-    --primary: 255 90% 36%;
+    --primary: 210 100% 40%; /* #0066CC */
 
     --primary-foreground: 0 0% 98%;
 
@@ -155,7 +155,7 @@
 
 /* Sent messages (user's own messages) */
 .str-chat__message--me .str-chat__message-bubble {
-  background-color: #450ea7 !important; /* Blue background */
+  background-color: #0066CC !important; /* Blue background */
   color: white !important; /* White text */
   border-radius: 12px !important;
   padding: 4px 12px !important;
@@ -193,5 +193,5 @@
 
 /* Higher specificity */
 .str-chat__message-input .str-chat__send-button svg path {
-  fill: #450ea7 !important;
+  fill: #0066CC !important;
 }

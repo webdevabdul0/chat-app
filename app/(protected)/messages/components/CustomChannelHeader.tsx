@@ -8,8 +8,15 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import CallComponent from "./CallComponent";
 import GroupSettingsModal from "./GroupSettings";
+import { getUserCached } from "@/lib/userCache";
+import Image from "next/image";
 
-const CustomChannelHeader = ({ setSelectedChannel, setShowChatWindow }) => {
+interface CustomChannelHeaderProps {
+  setSelectedChannel: (channel: any) => void;
+  setShowChatWindow: (show: boolean) => void;
+}
+
+const CustomChannelHeader = ({ setSelectedChannel, setShowChatWindow }: CustomChannelHeaderProps) => {
   const { channel } = useChannelStateContext(); // Get the current channel
   const [isVideoCall, setIsVideoCall] = useState(true);
   const [callStarted, setCallStarted] = useState(false);
@@ -23,12 +30,12 @@ const CustomChannelHeader = ({ setSelectedChannel, setShowChatWindow }) => {
 
   if (!channel || !channel.state || !channel.state.members) return null;
 
-  const members = Object.values(channel.state.members);
+  const members = Object.values(channel.state.members ?? {});
   const isGroupChat = members.length > 2;
 
   // Get recipient for 1-on-1 chat
   const recipient = members.find(
-    (member) => member.user.id !== currentUser?.uid
+    (member: any) => member.user?.id !== currentUser?.uid
   );
   const isOnline = recipient?.user?.online;
 
@@ -39,11 +46,8 @@ const CustomChannelHeader = ({ setSelectedChannel, setShowChatWindow }) => {
 
     const fetchProfilePic = async () => {
       try {
-        const userDoc = await getDoc(doc(db, "users", recipient.user.id));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setRecipientProfilePic(userData.profilePic || null);
-        }
+        const user = await getUserCached(recipient.user.id);
+        setRecipientProfilePic(user?.profilePic || null);
       } catch (error) {
         console.error("Error fetching profile picture:", error);
       }
@@ -73,9 +77,11 @@ const CustomChannelHeader = ({ setSelectedChannel, setShowChatWindow }) => {
             {/* ✅ Group icon with primary color */}
           </div>
         ) : recipientProfilePic ? (
-          <img
-            src={recipientProfilePic}
-            alt={recipient?.user?.name}
+          <Image
+            src={recipientProfilePic ?? ""}
+            alt={recipient?.user?.name ?? ""}
+            width={40}
+            height={40}
             className="w-10 h-10 rounded-full object-cover"
           />
         ) : (
@@ -88,7 +94,7 @@ const CustomChannelHeader = ({ setSelectedChannel, setShowChatWindow }) => {
         <div>
           <span className="font-semibold text-lg">
             {isGroupChat
-              ? channel.data.name || "Unnamed Group"
+              ? channel.data?.name || "Unnamed Group"
               : recipient?.user?.name || "Unknown"}
           </span>
           {!isGroupChat && (

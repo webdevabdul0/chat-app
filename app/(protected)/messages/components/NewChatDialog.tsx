@@ -9,6 +9,7 @@ import { User } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useChat } from "@/app/ChatProvider";
+import Image from "next/image";
 
 const NewChatDialog = ({
   open,
@@ -68,9 +69,11 @@ const NewChatDialog = ({
               className="flex w-full items-center gap-3 p-3 hover:bg-primary/10 rounded-lg transition"
             >
               {user.profilePic ? (
-                <img
+                <Image
                   src={user.profilePic}
                   alt={user.fullName}
+                  width={40}
+                  height={40}
                   className="w-10 h-10 rounded-full object-cover"
                 />
               ) : (

@@ -1,18 +1,22 @@
 import { useState, useEffect } from "react";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { getUserCached } from "@/lib/userCache";
+import Image from "next/image";
 
-const ChatMember = ({ userId, Name, userName }) => {
+interface ChatMemberProps {
+  userId: string;
+  Name: string;
+  userName: string;
+}
+
+const ChatMember = ({ userId, Name, userName }: ChatMemberProps) => {
   const [profilePic, setProfilePic] = useState(null);
 
   useEffect(() => {
     const fetchProfilePic = async () => {
       if (!userId) return;
       try {
-        const userDoc = await getDoc(doc(db, "users", userId));
-        if (userDoc.exists()) {
-          setProfilePic(userDoc.data().profilePic || null);
-        }
+        const user = await getUserCached(userId);
+        setProfilePic(user?.profilePic || null);
       } catch (error) {
         console.error("Error fetching profile picture:", error);
       }
@@ -24,9 +28,11 @@ const ChatMember = ({ userId, Name, userName }) => {
   return (
     <div className="flex items-center gap-3 p-3">
       {profilePic ? (
-        <img
+        <Image
           src={profilePic}
           alt={Name}
+          width={40}
+          height={40}
           className="w-10 h-10 rounded-full object-cover"
           onError={() => setProfilePic(null)}
         />

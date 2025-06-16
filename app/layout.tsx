@@ -12,7 +12,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "iHere",
+  title: "GoGreek",
   description: "Social App",
   icons: {
     icon: "/favicon.ico", // Correct way to set the favicon

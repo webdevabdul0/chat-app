@@ -125,7 +125,7 @@ export default function LoginPage() {
         </div>
 
         <div className="w-full lg:w-1/2 flex flex-col items-center justify-center">
-          <Image src="/logo.png" alt="logo" width={100} height={100} />
+          <Image src="/logo.png" alt="logo" width={140} height={140} />
 
           <Card className="mx-10 w-full max-w-md shadow-lg rounded-3xl p-6 mt-4">
             <CardHeader>
@@ -222,7 +222,7 @@ export default function LoginPage() {
               </form>
 
               <p className="text-sm mt-4 text-start font-semibold">
-                Don’t have an account?{" "}
+                Don't have an account?{" "}
                 <Link href="/auth/signup" className="text-primary">
                   Sign Up
                 </Link>
@@ -241,7 +241,7 @@ export default function LoginPage() {
               </Button>
 
               <p className="text-sm mt-4 text-start font-semibold text-black/40">
-                © 2024 ihere. All rights reserved.
+                © 2024 GoGreek. All rights reserved.
               </p>
             </CardContent>
           </Card>

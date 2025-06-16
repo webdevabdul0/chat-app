@@ -7,6 +7,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { useChat } from "@/app/ChatProvider";
 import { v4 as uuidv4 } from "uuid";
+import Image from "next/image";
 
 const NewGroupDialog = ({ open, setOpen }) => {
   const [users, setUsers] = useState([]);
@@ -84,9 +85,11 @@ const NewGroupDialog = ({ open, setOpen }) => {
               }`}
             >
               {user.profilePic ? (
-                <img
+                <Image
                   src={user.profilePic}
                   alt={user.fullName}
+                  width={40}
+                  height={40}
                   className="w-10 h-10 rounded-full object-cover"
                 />
               ) : (

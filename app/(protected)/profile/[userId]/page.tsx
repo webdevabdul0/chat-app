@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RightPanel from "@/app/components/RightPanel";
 import SettingsPopup from "@/app/components/SettingsPopup";
 import BookingDialog from "../../messages/components/BookingDialog";
+import Image from "next/image";
 
 interface User {
   id: string;
@@ -28,6 +29,7 @@ interface User {
   location: string;
   profilePic: string;
   createdAt: any;
+  description?: string;
 }
 
 interface PostData {
@@ -36,6 +38,7 @@ interface PostData {
   imageUrl: string;
   caption?: string;
   createdAt: any;
+  mediaType?: string;
 }
 
 export default function ProfilePage() {
@@ -48,10 +51,10 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!userId) return;
-
+    const userIdStr = Array.isArray(userId) ? userId[0] : userId;
     const fetchUserData = async () => {
       try {
-        const userRef = doc(db, "users", userId);
+        const userRef = doc(db, "users", userIdStr);
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
@@ -61,14 +64,18 @@ export default function ProfilePage() {
         // Fetch user's posts
         const postsQuery = query(
           collection(db, "posts"),
-          where("userId", "==", userId)
+          where("userId", "==", userIdStr)
         );
         const postsSnap = await getDocs(postsQuery);
 
-        const fetchedPosts = postsSnap.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as PostData[];
+        const fetchedPosts = postsSnap.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            caption: data.caption || "",
+          };
+        }) as PostData[];
 
         setPosts(fetchedPosts);
       } catch (error) {
@@ -100,9 +107,11 @@ export default function ProfilePage() {
                     <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
                   </Avatar>
                 ) : (
-                  <img
+                  <Image
                     src={user.profilePic}
                     alt="Profile"
+                    width={96}
+                    height={96}
                     className="w-24 h-24 rounded-full object-cover"
                   />
                 )}
@@ -158,7 +167,7 @@ export default function ProfilePage() {
 
         <div className=" hidden sm:flex">
           <p className="text-base font-semibold text-black">
-            {user.description}
+            {user?.description}
           </p>
         </div>
 
@@ -166,7 +175,19 @@ export default function ProfilePage() {
 
         <div className="w-full mt-8 space-y-8">
           {posts.length > 0 ? (
-            posts.map((post) => <Post key={post.id} post={post} />)
+            posts.map((post) => (
+              <Post
+                key={post.id}
+                post={{
+                  ...post,
+                  caption: post.caption || "",
+                  mediaType:
+                    post.mediaType === "image" || post.mediaType === "video" || post.mediaType === "audio"
+                      ? post.mediaType
+                      : null,
+                }}
+              />
+            ))
           ) : (
             <div className="flex flex-col items-center justify-center text-gray-300 py-16 sm:py-20 lg:py-28 gap-3">
               <Ghost className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 text-gray-300" />

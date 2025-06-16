@@ -124,7 +124,7 @@ export default function PostInput() {
             <Input
               id="media-upload"
               type="file"
-              accept="image/*,video/*"
+              accept="image/*,video/*,audio/*"
               className="hidden"
               onChange={handleMediaChange}
             />
