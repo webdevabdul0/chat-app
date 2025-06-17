@@ -172,10 +172,16 @@ export default function PostInput() {
           <Input
             id="music-upload"
             type="file"
-            accept="audio/*"
+            accept=".mp3,.wav,.aac,.m4a,audio/*"
             className="hidden"
             onChange={handleMediaChange}
           />
+        </div>
+        {/* iOS Audio Upload Hint */}
+        <div className="text-xs text-gray-400 mt-1">
+          <span>
+            On iPhone, only audio files in the Files app (not Apple Music) can be uploaded. Supported formats: mp3, m4a, wav, aac.
+          </span>
         </div>
 
         {/* Post Button */}
